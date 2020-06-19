@@ -18,19 +18,19 @@ int main() {
 	WORD ver = MAKEWORD(2, 2);
 
 	if (int status = WSAStartup(ver, &wsData); status != 0) {
-		std::cerr << NT_ERROR << " WSAStartup return " << status << "\n";
+		std::cerr << NT_ERROR << " WSAStartup return " << WSAGetLastError() << "\n";
 		return -1;
 	}
 
-	// Create a socket
+	// Create a socket 
 	SOCKET listen_sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (listen_sock == INVALID_SOCKET) {
-		std::cerr << NT_ERROR << " socket(AF_INET, SOCK_STREAM, 0) return INVALID_SOCKET\n";
+		std::cerr << NT_ERROR << " socket(AF_INET, SOCK_STREAM, 0) return " << WSAGetLastError() << "\n";
 		WSACleanup();
 		return -1;
 	}
 
-	// Bind the ip address and port to a socket
+	// Bind port to a socket
 	sockaddr_in hint;
 	hint.sin_family = AF_INET;
 	hint.sin_port = htons(PORT);
@@ -58,15 +58,15 @@ int main() {
 	// Add our first socket: the listening socket
 	FD_SET(listen_sock, &master_set);
 
-	// this will be changed by the \quit command
-	bool running = true;
-
 	std::cout << NT_LOG << " Server is up and running\n";
 	std::cout << NT_LOG << " Waiting for connection...\n";
 
 	char buf[MAX_BUF];    // buf for send and recv message
 	char host[NI_MAXHOST];		// client's remote name
 	char service[NI_MAXSERV];	// service (i.e. port) the client is connect on
+
+	// this will be changed by the \quit command
+	bool running = true;
 
 	while (running) {
 		// Make a copy of the master file descriptor set, this is SUPER important because
@@ -92,12 +92,12 @@ int main() {
 		for (int i = 0; i < socket_cnt; ++i) {    // use socket_cnt instead of master_set.fd_count, see below
 			SOCKET sock = copy_set.fd_array[i];
 
-			if (sock == listen_sock) {
+			if (sock == listen_sock) { //quan li ket noi 
 				// Accept new connection
 				sockaddr_in client_addr;
 				int client_addr_size = sizeof(client_addr);
 
-				SOCKET client_sock = accept(listen_sock, (sockaddr*)&client_addr, &client_addr_size);
+				SOCKET client_sock = accept(listen_sock, (sockaddr*)&client_addr, &client_addr_size); //quan li duong truyen 
 
 				if (client_sock == INVALID_SOCKET) {
 					std::cerr << NT_ERROR << " accept return  " << WSAGetLastError() << "\n";
@@ -119,8 +119,10 @@ int main() {
 				FD_SET(client_sock, &master_set);
 
 				// Send a welcome message to the connected client
-				std::string welcome_msg = "Welcome to the File Server!";
-				send(client_sock, welcome_msg.c_str(), welcome_msg.size() + 1, 0);
+				std::ostringstream welcome_s;
+				welcome_s << "Welcome " << host << " to the File Server!";
+				std::string welcome_str = welcome_s.str();
+				send(client_sock, welcome_str.c_str(), welcome_str.size() + 1, 0);
 			}
 			else {
 				ZeroMemory(buf, 4096);
@@ -135,7 +137,7 @@ int main() {
 					FD_CLR(sock, &master_set);
 				}
 				else {
-					std::cout << bytes_in << " " << std::string(buf, bytes_in) << "\n";
+					std::cout << std::string(buf, bytes_in) << "\n";
 
 					// Check to see if it's a command. \quit kills the server
 					if (buf[0] == '\\') {

@@ -19,14 +19,14 @@ int main() {
 	WORD ver = MAKEWORD(2, 2);
 
 	if (int status = WSAStartup(ver, &wsData); status != 0) {
-		std::cerr << NT_ERROR << " WSAStartup return " << status << "\n";
+		std::cerr << NT_ERROR << " WSAStartup return " << WSAGetLastError() << "\n";
 		return -1;
 	}
 
 	// Create socket
 	SOCKET server_sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (server_sock == INVALID_SOCKET) {
-		std::cerr << NT_ERROR << " socket(AF_INET, SOCK_STREAM, 0) return INVALID_SOCKET\n";
+		std::cerr << NT_ERROR << " socket(AF_INET, SOCK_STREAM, 0) return " << WSAGetLastError() << "\n";
 		WSACleanup();
 		return -1;
 	}
