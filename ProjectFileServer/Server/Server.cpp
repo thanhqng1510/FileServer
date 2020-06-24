@@ -5,11 +5,17 @@
 
 #pragma comment (lib, "ws2_32.lib")
 
+
 #define PORT 54000
-#define MAX_BUF 4096
+#define MAX_BUF 1024
 
 #define NT_ERROR "[Error]"
 #define NT_LOG "[Log]"
+
+struct Client {
+	SOCKET client_sock;
+	std::string username;
+};
 
 
 int main() {
@@ -62,8 +68,6 @@ int main() {
 	std::cout << NT_LOG << " Waiting for connection...\n";
 
 	char buf[MAX_BUF];    // buf for send and recv message
-	char host[NI_MAXHOST];		// client's remote name
-	char service[NI_MAXSERV];	// service (i.e. port) the client is connect on
 
 	// this will be changed by the \quit command
 	bool running = true;
@@ -94,38 +98,39 @@ int main() {
 
 			if (sock == listen_sock) { //quan li ket noi 
 				// Accept new connection
-				sockaddr_in client_addr;
-				int client_addr_size = sizeof(client_addr);
-
-				SOCKET client_sock = accept(listen_sock, (sockaddr*)&client_addr, &client_addr_size); //quan li duong truyen 
+				SOCKET client_sock = accept(listen_sock, nullptr, nullptr); //quan li duong truyen 
 
 				if (client_sock == INVALID_SOCKET) {
 					std::cerr << NT_ERROR << " accept return  " << WSAGetLastError() << "\n";
 					continue;
 				}
 
-				// Get client's host and service name
-				ZeroMemory(host, NI_MAXHOST);
-				ZeroMemory(service, NI_MAXSERV);
+				// Send a welcome message to the connected client				
+				std::string str = "Enter username: ";
+				send(client_sock, str.c_str(), str.size() + 1, 0);
+				ZeroMemory(buf, MAX_BUF);
+				recv(client_sock, buf, MAX_BUF, 0);
+				
+				std::string username = buf;
 
-				if (getnameinfo((sockaddr*)&client_addr, sizeof(client_addr), host, NI_MAXHOST, service, NI_MAXSERV, 0) == 0)    // succeed
-					std::cout << NT_LOG << " " << host << " has connected from port " << service << "\n";
-				else {
-					std::cout << NT_LOG << " A client has connected\n";
-					std::cout << NT_ERROR << " getnameinfo return " << WSAGetLastError() << "\n";
-				}
+				str = "Enter password: ";
+				send(client_sock, str.c_str(), str.size() + 1, 0);
+				ZeroMemory(buf, MAX_BUF);
+				recv(client_sock, buf, MAX_BUF, 0);
+
+				std::string password = buf;
+
+				/*
+				
+			
+				
+				*/
 
 				// Add the new connection to the list of connected clients
 				FD_SET(client_sock, &master_set);
-
-				// Send a welcome message to the connected client
-				std::ostringstream welcome_s;
-				welcome_s << "Welcome " << host << " to the File Server!";
-				std::string welcome_str = welcome_s.str();
-				send(client_sock, welcome_str.c_str(), welcome_str.size() + 1, 0);
 			}
 			else {
-				ZeroMemory(buf, 4096);
+				ZeroMemory(buf, MAX_BUF);
 
 				// Receive message
 				int bytes_in = recv(sock, buf, MAX_BUF, 0);
