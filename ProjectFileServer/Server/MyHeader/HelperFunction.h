@@ -20,11 +20,13 @@ void InitialzeWinsockAndCheck(std::ofstream& activity_file) {
 }
 
 void SetDispMode(int& global_mode, int mode, std::ofstream& activity_file) {
-	if (mode == ACTIVITY_MODE && global_mode == LIST_MODE) {
+	if (global_mode == ACTIVITY_MODE && mode == LIST_MODE) {
 		system("cls");
-		// nothing
+		/*
+		TODO: print list
+		*/
 	}
-	else if (mode == LIST_MODE && global_mode == ACTIVITY_MODE) {    // LIST_MODE
+	else if (global_mode == LIST_MODE && mode == ACTIVITY_MODE) {
 		system("cls");
 
 		activity_file.close();
@@ -34,10 +36,49 @@ void SetDispMode(int& global_mode, int mode, std::ofstream& activity_file) {
 		buf << fin.rdbuf();
 		fin.close();
 
-		std::cout << buf.str();    // already have '\n' in buf
-
 		activity_file.open("Private/Activity.txt", std::ios::app);
+
+		std::cout << buf.str();    // already have '\n' in buf
 	}
 
 	global_mode = mode;
+}
+
+void HandleListenSock(MySocketWrapper& listen_sock, int disp_mode, std::ofstream& activity_file) {
+	// Accept new connection
+	MySocketWrapper client_sock = listen_sock.util.Accept();    // quan li duong truyen 
+
+	if (client_sock.m_sock == INVALID_SOCKET) {
+		std::stringstream sstr;
+		sstr << NT_ERROR << " accept return  " << WSAGetLastError();
+
+		if (disp_mode == ACTIVITY_MODE)
+			std::cout << sstr.str() << "\n";
+
+		activity_file << sstr.str() << "\n";
+
+		return;
+	}
+
+	// Send a welcome message to the connected client				
+	std::string str = "Enter username: ";
+	send(client_sock, str.c_str(), str.size() + 1, 0);
+	ZeroMemory(buf, MAX_BUF);
+	recv(client_sock, buf, MAX_BUF, 0);
+
+	std::string username = buf;
+
+	str = "Enter password: ";
+	send(client_sock, str.c_str(), str.size() + 1, 0);
+	ZeroMemory(buf, MAX_BUF);
+	recv(client_sock, buf, MAX_BUF, 0);
+
+	std::string password = buf;
+
+	// Add the new connection to the list of connected clients
+	FD_SET(client_sock, &master_set);
+}
+
+void HandleClientSock() {
+
 }

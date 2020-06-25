@@ -23,16 +23,19 @@
     <Text Include="Private\Activity.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="MyHeader\MyClient.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="MyHeader\Define.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MyHeader\HelperFunction.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MyHeader\MySocket.h">
+    <ClInclude Include="MyHeader\MyFdSet.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MyHeader\MySocketWrapper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MyHeader\MySocketUtil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

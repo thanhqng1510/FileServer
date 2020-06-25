@@ -1,96 +1,50 @@
 ﻿#include "MyHeader/Define.h"
-#include "MyHeader/MyClient.h"
-#include "MyHeader/MySocket.h"
+#include "MyHeader/MySocketWrapper.h"
+#include "MyHeader/MySocketUtil.h"
 #include "MyHeader/HelperFunction.h"
-
-
-char MESS_BUF[MAX_BUF];
-int DISP_MODE;
+#include "MyHeader/MyFdSet.h"
 
 
 int main() {
-	// Start with activity mode => activity_file open for written, cout direct to screeen
+	// Start with activity mode => activity_file open for written, cout direct to console
 
 	std::ofstream activity_file("Private/Activity.txt", std::ios::trunc);
+
+	char BUF[MAX_BUF];
+	int DISP_MODE = NO_MODE;
 
 	InitialzeWinsockAndCheck(activity_file);
 
 	SetDispMode(DISP_MODE, ACTIVITY_MODE, activity_file);
 
-	MySocket sock(DISP_MODE, activity_file);
-	sock.Bind(PORT);
-	sock.Listen();
+	MySocketWrapper listen_sock(DISP_MODE, activity_file);
+	listen_sock.util.Bind(PORT);
+	listen_sock.util.Listen();
 
 	// Create the master file descriptor set and zero it
-	fd_set master_set;
-	FD_ZERO(&master_set);
+	MyFdSet master_set;
 
 	// Add our first socket: the listening socket
-	FD_SET(listen_sock, &master_set);
+	master_set.Add(listen_sock);
 
-	/*
-	Mặc định khi mới vô server ở chế độ Activity
-	*/
+	// -----------------------------------------------------------
+
 	std::stringstream sstr;
-	sstr << NT_LOG << " Server is up and running\n" << NT_LOG << " Waiting for connection...";
+	sstr << NT_ACTIVITY << " Server is up and running\n" << NT_ACTIVITY << " Waiting for connection...";
 	std::cout << sstr.str() << "\n";
-	fout << sstr.str() << "\n";
+	activity_file << sstr.str() << "\n";
 
 	while (true) {
-		fd_set copy_set = master_set;
+		MyFdSet copy_set = master_set;
 
 		// See who's talking to us
-		int socket_cnt = select(0, &copy_set, nullptr, nullptr, nullptr);
-
-		if (socket_cnt == 0) {
-			std::stringstream sstr;
-			sstr << NT_ERROR << " select(0, &copy_set, nullptr, nullptr, nullptr) with time limit expired";
-			std::cout << sstr.str() << "\n";
-			fout << sstr.str() << "\n";
-		}
-		else if (socket_cnt == SOCKET_ERROR) {
-			std::stringstream sstr;
-			sstr << NT_ERROR << " select return " << WSAGetLastError();
-			std::cout << sstr.str() << "\n";
-			fout << sstr.str() << "\n";
-		}
+		int socket_cnt = copy_set.Select(DISP_MODE, activity_file);
 
 		for (int i = 0; i < socket_cnt; ++i) {    // use socket_cnt instead of master_set.fd_count, see below
-			SOCKET sock = copy_set.fd_array[i];
+			MySocketWrapper sock = copy_set.Get(i);
 
-			if (sock == listen_sock) {    // quan li ket noi 
-				// Accept new connection
-				SOCKET client_sock = accept(listen_sock, nullptr, nullptr);    // quan li duong truyen 
-
-				if (client_sock == INVALID_SOCKET) {
-					std::cerr << NT_ERROR << " accept return  " << WSAGetLastError() << "\n";
-					continue;
-				}
-
-				// Send a welcome message to the connected client				
-				std::string str = "Enter username: ";
-				send(client_sock, str.c_str(), str.size() + 1, 0);
-				ZeroMemory(buf, MAX_BUF);
-				recv(client_sock, buf, MAX_BUF, 0);
-				
-				std::string username = buf;
-
-				str = "Enter password: ";
-				send(client_sock, str.c_str(), str.size() + 1, 0);
-				ZeroMemory(buf, MAX_BUF);
-				recv(client_sock, buf, MAX_BUF, 0);
-
-				std::string password = buf;
-
-				/*
-				
-			
-				
-				*/
-
-				// Add the new connection to the list of connected clients
-				FD_SET(client_sock, &master_set);
-			}
+			if (sock == listen_sock)    // quan li ket noi 
+				HandleListenSock(sock, DISP_MODE, activity_file);
 			else {
 				ZeroMemory(buf, MAX_BUF);
 

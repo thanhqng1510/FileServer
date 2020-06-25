@@ -4,23 +4,12 @@
 #include "Define.h"
 
 
-class MySocket {
+class MySocketUtil {
+	friend class MySocketWrapper;
+
 public:
-	MySocket(int disp_mode, std::ofstream& activity_file)
-	: m_sock(socket(AF_INET, SOCK_STREAM, 0)), m_disp_mode(disp_mode), m_activity_file(activity_file) {
-		if (m_sock == INVALID_SOCKET) {
-			std::stringstream sstr;
-			sstr << NT_ERROR << " socket(AF_INET, SOCK_STREAM, 0) return " << WSAGetLastError();
-
-			if (m_disp_mode == ACTIVITY_MODE)
-				std::cout << sstr.str() << "\n";
-			
-			m_activity_file << sstr.str() << "\n";
-
-			WSACleanup();
-			assert(false);
-		}
-	}
+	MySocketUtil(SOCKET sock, int disp_mode, std::ofstream& activity_file)
+		: m_sock(sock), m_disp_mode(disp_mode), m_activity_file(activity_file) {}
 
 public:
 	void Bind(int port) {
@@ -60,8 +49,24 @@ public:
 		}
 	}
 
+	MySocketWrapper Accept() {
+		SOCKET client = accept(m_sock, nullptr, nullptr);
+
+		if (client == INVALID_SOCKET) {
+			std::stringstream sstr;
+			sstr << NT_ERROR << " accept return  " << WSAGetLastError();
+
+			if (m_disp_mode == ACTIVITY_MODE)
+				std::cout << sstr.str() << "\n";
+
+			m_activity_file << sstr.str() << "\n";
+		}
+
+		return MySocketWrapper(client, m_disp_mode, m_activity_file);
+	}
+
 private:
-	SOCKET m_sock;
+	SOCKET& m_sock;    // ref to socket
 	int& m_disp_mode;    // ref to disp mode
 	std::ofstream& m_activity_file;    // ref to activiy file
 };

@@ -7,6 +7,7 @@
 #include <sstream>
 #include <fstream>
 #include <cassert>
+#include <unordered_map>
 
 
 #pragma comment (lib, "ws2_32.lib")
@@ -19,5 +20,6 @@
 #define NT_INOUT "[Login/Logout]"
 #define NT_ACTIVITY "[Activity]"
 
-#define ACTIVITY_MODE 0
-#define LIST_MODE 1
+#define NO_MODE 0
+#define ACTIVITY_MODE 1
+#define LIST_MODE 2
