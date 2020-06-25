@@ -64,11 +64,11 @@ int main() {
 			std::cout << NT_FROM_SV << " " << std::string(buf, bytes_in) << "\n";
 
 		// Prompt the user for some text
-		std::cout << "> ";
-		std::getline(std::cin, user_input, '\n');
+		//std::cout << "> ";
+		//std::getline(std::cin, user_input, '\n');
 
-		if (user_input.size() > 0)    // Make sure the user has typed in something
-			send(server_sock, user_input.c_str(), user_input.size() + 1, 0);
+		//if (user_input.size() > 0)    // Make sure the user has typed in something
+			//send(server_sock, user_input.c_str(), user_input.size() + 1, 0);
 	}
 
 	// Gracefully close down everything
