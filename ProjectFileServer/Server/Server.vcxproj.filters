@@ -23,9 +23,6 @@
     <Text Include="Private\Activity.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="MyHeader\Define.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="MyHeader\HelperFunction.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -35,7 +32,10 @@
     <ClInclude Include="MyHeader\MySocketWrapper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MyHeader\MySocketUtil.h">
+    <ClInclude Include="MyHeader\Necessity.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MyHeader\MySocketData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

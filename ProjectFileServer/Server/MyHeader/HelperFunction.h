@@ -1,7 +1,9 @@
 #pragma once
 
 
-#include "Define.h"
+#include "Necessity.h"
+#include "MySocketWrapper.h"
+#include "MyFdSet.h"
 
 
 void InitialzeWinsockAndCheck(std::ofstream& activity_file) {
@@ -10,7 +12,7 @@ void InitialzeWinsockAndCheck(std::ofstream& activity_file) {
 
 	if (int status = WSAStartup(ver, &wsData); status != 0) {
 		std::stringstream sstr;
-		sstr << NT_ERROR << " WSAStartup return " << WSAGetLastError();
+		sstr << CST::NT_ERROR << " WSAStartup return " << WSAGetLastError();
 
 		std::cout << sstr.str() << "\n";    // default is activity display mode
 		activity_file << sstr.str() << "\n";
@@ -20,13 +22,13 @@ void InitialzeWinsockAndCheck(std::ofstream& activity_file) {
 }
 
 void SetDispMode(int& global_mode, int mode, std::ofstream& activity_file) {
-	if (global_mode == ACTIVITY_MODE && mode == LIST_MODE) {
+	if (global_mode == CST::ACTIVITY_MODE && mode == CST::LIST_MODE) {
 		system("cls");
 		/*
 		TODO: print list
 		*/
 	}
-	else if (global_mode == LIST_MODE && mode == ACTIVITY_MODE) {
+	else if (global_mode == CST::LIST_MODE && mode == CST::ACTIVITY_MODE) {
 		system("cls");
 
 		activity_file.close();
@@ -44,15 +46,15 @@ void SetDispMode(int& global_mode, int mode, std::ofstream& activity_file) {
 	global_mode = mode;
 }
 
-void HandleListenSock(MySocketWrapper& listen_sock, int disp_mode, std::ofstream& activity_file) {
+void HandleListenSock(MySocketWrapper& listen_sock, int disp_mode, std::ofstream& activity_file, MyFdSet& master_set) {
 	// Accept new connection
-	MySocketWrapper client_sock = listen_sock.util.Accept();    // quan li duong truyen 
+	MySocketWrapper client_sock = listen_sock.Accept(disp_mode, activity_file);    // quan li duong truyen 
 
-	if (client_sock.m_sock == INVALID_SOCKET) {
+	if (client_sock.data.type == CST::INVALID_SOCK) {
 		std::stringstream sstr;
-		sstr << NT_ERROR << " accept return  " << WSAGetLastError();
+		sstr << CST::NT_ERROR << " accept return  " << WSAGetLastError();
 
-		if (disp_mode == ACTIVITY_MODE)
+		if (disp_mode == CST::ACTIVITY_MODE)
 			std::cout << sstr.str() << "\n";
 
 		activity_file << sstr.str() << "\n";
@@ -60,25 +62,23 @@ void HandleListenSock(MySocketWrapper& listen_sock, int disp_mode, std::ofstream
 		return;
 	}
 
-	// Send a welcome message to the connected client				
-	std::string str = "Enter username: ";
-	send(client_sock, str.c_str(), str.size() + 1, 0);
-	ZeroMemory(buf, MAX_BUF);
-	recv(client_sock, buf, MAX_BUF, 0);
-
-	std::string username = buf;
-
-	str = "Enter password: ";
-	send(client_sock, str.c_str(), str.size() + 1, 0);
-	ZeroMemory(buf, MAX_BUF);
-	recv(client_sock, buf, MAX_BUF, 0);
-
-	std::string password = buf;
-
 	// Add the new connection to the list of connected clients
-	FD_SET(client_sock, &master_set);
+	master_set.Add(client_sock);
 }
 
 void HandleClientSock() {
+	//// Send a welcome message to the connected client				
+	//std::string str = "Enter username: ";
+	//send(client_sock, str.c_str(), str.size() + 1, 0);
+	//ZeroMemory(buf, MAX_BUF);
+	//recv(client_sock, buf, MAX_BUF, 0);
 
+	//std::string username = buf;
+
+	//str = "Enter password: ";
+	//send(client_sock, str.c_str(), str.size() + 1, 0);
+	//ZeroMemory(buf, MAX_BUF);
+	//recv(client_sock, buf, MAX_BUF, 0);
+
+	//std::string password = buf;
 }

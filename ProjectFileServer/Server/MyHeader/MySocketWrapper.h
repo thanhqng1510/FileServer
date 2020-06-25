@@ -1,40 +1,93 @@
 #pragma once
 
 
-#include "Define.h"
-#include "MySocketUtil.h"
+#include "Necessity.h"
+#include "MySocketData.h"
 
 
 class MySocketWrapper {
 public:
-	MySocketWrapper(int disp_mode, std::ofstream& activity_file)
-		: m_sock(socket(AF_INET, SOCK_STREAM, 0)), util(m_sock, disp_mode, activity_file) {
-		if (m_sock == INVALID_SOCKET) {
+	MySocketWrapper(int type, int login_stat, int disp_mode, std::ofstream& activity_file)
+		: sock(socket(AF_INET, SOCK_STREAM, 0)), data(type, login_stat) {
+		if (sock == INVALID_SOCKET) {
 			std::stringstream sstr;
-			sstr << NT_ERROR << " socket(AF_INET, SOCK_STREAM, 0) return " << WSAGetLastError();
+			sstr << CST::NT_ERROR << " socket(AF_INET, SOCK_STREAM, 0) return " << WSAGetLastError();
 
-			if (util.m_disp_mode == ACTIVITY_MODE)
+			if (disp_mode == CST::ACTIVITY_MODE)
 				std::cout << sstr.str() << "\n";
 			
-			util.m_activity_file << sstr.str() << "\n";
+			activity_file << sstr.str() << "\n";
 
 			WSACleanup();
 			assert(false);
 		}
 	}
 
-	MySocketWrapper(SOCKET sock, int disp_mode, std::ofstream& activity_file)
-		: m_sock(sock), util(m_sock, disp_mode, activity_file) {}
+	MySocketWrapper(SOCKET sock, int type, int login_stat)
+		: sock(sock), data(type, login_stat) {}
 
-	MySocketWrapper(SOCKET sock, MySocketUtil util)
-		: m_sock(sock), util(util) {}
+	MySocketWrapper(SOCKET sock, MySocketData data)
+		: sock(sock), data(data) {}
 
 public:
+	void Bind(int port, int disp_mode, std::ofstream& activity_file) {
+		sockaddr_in hint;
+		hint.sin_family = AF_INET;
+		hint.sin_port = htons(port);
+		hint.sin_addr.S_un.S_addr = INADDR_ANY;    // bind to all interfaces
+
+		if (bind(sock, (sockaddr*)&hint, sizeof(hint)) != 0) {
+			std::stringstream sstr;
+			sstr << CST::NT_ERROR << " bind return " << WSAGetLastError();
+
+			if (disp_mode == CST::ACTIVITY_MODE)
+				std::cout << sstr.str() << "\n";
+
+			activity_file << sstr.str() << "\n";
+
+			closesocket(sock);
+			WSACleanup();
+			assert(false);
+		}
+	}
+
+	void Listen(int disp_mode, std::ofstream& activity_file) {
+		if (listen(sock, SOMAXCONN) != 0) {
+			std::stringstream sstr;
+			sstr << CST::NT_ERROR << " listen return " << WSAGetLastError();
+
+			if (disp_mode == CST::ACTIVITY_MODE)
+				std::cout << sstr.str() << "\n";
+
+			activity_file << sstr.str() << "\n";
+
+			closesocket(sock);
+			WSACleanup();
+			assert(false);
+		}
+	}
+
+	MySocketWrapper Accept(int disp_mode, std::ofstream& activity_file) {
+		SOCKET client = accept(sock, nullptr, nullptr);
+
+		if (client == INVALID_SOCKET) {
+			std::stringstream sstr;
+			sstr << CST::NT_ERROR << " accept return  " << WSAGetLastError();
+
+			if (disp_mode == CST::ACTIVITY_MODE)
+				std::cout << sstr.str() << "\n";
+
+			activity_file << sstr.str() << "\n";
+		}
+
+		return MySocketWrapper(client, client == INVALID_SOCKET ? CST::INVALID_SOCK : CST::CLIENT_SOCK, CST::NOT_LOGGED_IN);
+	}
+
 	bool operator==(const MySocketWrapper& other) {
-		return m_sock == other.m_sock;
+		return sock == other.sock;
 	}
 
 public:
-	MySocketUtil util;
-	SOCKET m_sock;
+	SOCKET sock;
+	MySocketData data;
 };

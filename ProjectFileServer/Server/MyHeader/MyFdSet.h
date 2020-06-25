@@ -1,8 +1,8 @@
 #pragma once
 
 
-#include "Define.h"
-#include "MySocketUtil.h"
+#include "Necessity.h"
+#include "MySocketData.h"
 #include "MySocketWrapper.h"
 
 
@@ -19,8 +19,8 @@ public:
 	}
 
 	void Add(const MySocketWrapper& socket) {
-		FD_SET(socket.m_sock, &m_set);
-		m_map.insert({ socket.m_sock, socket.util });
+		FD_SET(socket.sock, &m_set);
+		m_map.insert({ socket.sock, socket.data });
 	}
 
 	int Select(int disp_mode, std::ofstream& activity_file) {
@@ -28,17 +28,17 @@ public:
 
 		std::stringstream sstr;
 		if (socket_cnt == 0) {
-			sstr << NT_ERROR << " select(0, &copy_set, nullptr, nullptr, nullptr) with time limit expired";
+			sstr << CST::NT_ERROR << " select(0, &copy_set, nullptr, nullptr, nullptr) with time limit expired";
 
-			if (disp_mode == ACTIVITY_MODE)
+			if (disp_mode == CST::ACTIVITY_MODE)
 				std::cout << sstr.str() << "\n";
 
 			activity_file << sstr.str() << "\n";
 		}
 		else if (socket_cnt == SOCKET_ERROR) {
-			sstr << NT_ERROR << " select return " << WSAGetLastError();
+			sstr << CST::NT_ERROR << " select return " << WSAGetLastError();
 
-			if (disp_mode == ACTIVITY_MODE)
+			if (disp_mode == CST::ACTIVITY_MODE)
 				std::cout << sstr.str() << "\n";
 
 			activity_file << sstr.str() << "\n";
@@ -50,11 +50,11 @@ public:
 
 	MySocketWrapper Get(int index) {
 		SOCKET sock = m_set.fd_array[index];
-		MySocketUtil util = m_map.at(sock);
-		return MySocketWrapper(sock, util);
+		MySocketData data = m_map.at(sock);
+		return MySocketWrapper(sock, data);
 	}
 
 private:
 	fd_set m_set;
-	std::unordered_map<SOCKET, MySocketUtil> m_map;
+	std::unordered_map<SOCKET, MySocketData> m_map;
 };

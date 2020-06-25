@@ -147,10 +147,10 @@
     <Text Include="Private\Activity.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="MyHeader\Define.h" />
+    <ClInclude Include="MyHeader\Necessity.h" />
     <ClInclude Include="MyHeader\HelperFunction.h" />
     <ClInclude Include="MyHeader\MyFdSet.h" />
-    <ClInclude Include="MyHeader\MySocketUtil.h" />
+    <ClInclude Include="MyHeader\MySocketData.h" />
     <ClInclude Include="MyHeader\MySocketWrapper.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
