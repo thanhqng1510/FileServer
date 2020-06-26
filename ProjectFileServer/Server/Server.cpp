@@ -10,15 +10,14 @@ int main() {
 
 	std::ofstream activity_file("Private/Activity.txt", std::ios::trunc);
 
-	char BUF[CST::MAX_BUF];
-	int DISP_MODE = CST::NO_MODE;
-
 	// Init winsock
 	InitialzeWinsockAndCheck(activity_file);
 
 	// Set display mode to activity mode
+	int DISP_MODE = CST::NO_MODE;
 	SetDispMode(DISP_MODE, CST::ACTIVITY_MODE, activity_file);
 
+	// Create listen socket
 	MySocketWrapper listen_sock(CST::LISTEN_SOCK, CST::NOT_LOGGED_IN, DISP_MODE, activity_file);
 	listen_sock.Bind(CST::PORT, DISP_MODE, activity_file);
 	listen_sock.Listen(DISP_MODE, activity_file);
@@ -35,6 +34,8 @@ int main() {
 	sstr << CST::NT_ACTIVITY << " Server is up and running\n" << CST::NT_ACTIVITY << " Waiting for connection...";
 	std::cout << sstr.str() << "\n";
 	activity_file << sstr.str() << "\n";
+
+	char BUF[CST::MAX_BUF];
 
 	while (true) {
 		MyFdSet copy_set = master_set;
