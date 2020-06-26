@@ -80,7 +80,23 @@ public:
 			activity_file << sstr.str() << "\n";
 		}
 
-		return MySocketWrapper(client, client == INVALID_SOCKET ? CST::INVALID_SOCK : CST::CLIENT_SOCK, CST::NOT_LOGGED_IN);
+		return MySocketWrapper(client, client == INVALID_SOCKET ? CST::INVALID_SOCK : CST::CLIENT_SOCK, CST::NOT_LOG_IN);
+	}
+
+	int Send(const std::string& str, int disp_mode, std::ofstream& activity_file) {
+		int res = send(sock, str.c_str(), str.size() + 1, 0);
+
+		if (res == SOCKET_ERROR) {
+			std::stringstream s;
+			s << CST::NT_ERROR << " send return " << WSAGetLastError();
+
+			if (disp_mode == CST::ACTIVITY_MODE)
+				std::cout << s.str() << "\n";
+
+			activity_file << s.str() << "\n";
+		}
+
+		return res;
 	}
 
 	bool operator==(const MySocketWrapper& other) {

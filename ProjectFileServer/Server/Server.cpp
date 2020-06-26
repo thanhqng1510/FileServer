@@ -18,7 +18,7 @@ int main() {
 	SetDispMode(DISP_MODE, CST::ACTIVITY_MODE, activity_file);
 
 	// Create listen socket
-	MySocketWrapper listen_sock(CST::LISTEN_SOCK, CST::NOT_LOGGED_IN, DISP_MODE, activity_file);
+	MySocketWrapper listen_sock(CST::LISTEN_SOCK, CST::NOT_LOG_IN, DISP_MODE, activity_file);
 	listen_sock.Bind(CST::PORT, DISP_MODE, activity_file);
 	listen_sock.Listen(DISP_MODE, activity_file);
 
@@ -48,48 +48,8 @@ int main() {
 
 			if (sock.data.type == CST::LISTEN_SOCK)    // quan li ket noi 
 				HandleListenSock(sock, DISP_MODE, activity_file, master_set);
-			else {
-				//ZeroMemory(buf, MAX_BUF);
-
-				//// Receive message
-				//int bytes_in = recv(sock, buf, MAX_BUF, 0);
-
-				//if (bytes_in <= 0) {
-				//	// Drop the client
-				//	std::cout << NT_LOG << " A client has disconnected\n";
-				//	closesocket(sock);
-				//	FD_CLR(sock, &master_set);
-				//}
-				//else {
-				//	std::cout << std::string(buf, bytes_in) << "\n";
-
-				//	// Check to see if it's a command. \quit kills the server
-				//	if (buf[0] == '\\') {
-				//		//// Is the command quit? 
-				//		//std::string cmd(buf, bytes_in - 1);    // remove trailing char cause don't know what it is
-
-				//		//if (cmd == "\\quit") {
-				//		//	running = false;
-				//		//	break;
-				//		//}
-
-				//		//// Unknown command
-				//		//continue;
-				//	}
-				//	else 
-				//		// Send message to other clients, and definiately NOT the listening socket
-				//		for (int j = 0; j < master_set.fd_count; ++j) {
-				//			SOCKET client_sock = master_set.fd_array[j];
-				//			if (client_sock != listen_sock && client_sock != sock) {
-				//				std::ostringstream ss;
-				//				ss << "SOCKET #" << sock << ": " << buf;
-				//				std::string str_out = ss.str();
-
-				//				send(client_sock, str_out.c_str(), str_out.size() + 1, 0);
-				//			}
-				//		}
-				//}
-			}
+			else
+				HandleClientSock(sock);
 		}
 	}
 

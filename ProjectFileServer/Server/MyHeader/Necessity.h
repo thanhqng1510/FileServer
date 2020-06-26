@@ -34,5 +34,6 @@ namespace CST {
 
 	// Login status
 	const int LOGGED_IN = 6;
-	const int NOT_LOGGED_IN = 7;
+	const int NOT_LOG_IN = 7;
+	const int PENDIND_LOG_IN = 8;
 }
