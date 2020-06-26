@@ -37,83 +37,44 @@
 //}
 
 
-//#include <iostream>
-//#include <thread>
-//#include <string>
-//#include <chrono>
-//#include <mutex>
-//using namespace std;
-//
-//
-//mutex mtx;
-//
-//void foo() {
-//    string x;
-//
-//    while (true) {
-//        std::this_thread::sleep_for(std::chrono::seconds(1));
-//
-//        mtx.lock();
-//        cin >> x;
-//        cout << x << "\n";
-//        mtx.unlock();
-//    }
-//}
-//
-//
-//int main() {
-//    thread t1(foo);
-//
-//    while (true) {
-//        std::this_thread::sleep_for(std::chrono::seconds(1));
-//
-//        mtx.lock();
-//        cout << "Cake\n";
-//        mtx.unlock();
-//    }
-//
-//    t1.join();
-//}
-
-
 #include <iostream>
 #include <thread>
 #include <string>
-#include <chrono>
 #include <mutex>
-using namespace std;
+#include <conio.h>
+#include <chrono>
 
-mutex mtx;
 
-void foo()
-{
-    while (1)
-    {
+std::mutex mtx;
+
+void CinThread() {
+    while (true) {
+        char c = _getch();
+
         mtx.lock();
-        cout << "Cake\n";
-        mtx.unlock();
 
-        std::this_thread::sleep_for(std::chrono::seconds(2));
+        while ((int)c != 13)
+            std::cout << c << "\n";
+
+        mtx.unlock();
     }
 }
 
-int main()
-{
-    thread t1(foo);
+void CoutThread() {
+    while (true) {
+        mtx.lock();
+        std::cout << "cout_thread\n";
+        mtx.unlock();
 
-    string x;
-    while (1)
-    {
-        char c;
-        while (cin.get(c))
-        {
-            mtx.lock();
-            cout << c;      
-
-            if (int(c) == 13)
-                mtx.unlock();
-        }
+        std::this_thread::sleep_for(std::chrono::seconds(1));
     }
+}
 
-    t1.join();
+
+int main() {
+    std::thread cin_thread(CinThread);
+    std::thread cout_thread(CoutThread);
+
+    cin_thread.join();
+    cout_thread.join();
 }
