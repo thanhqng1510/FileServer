@@ -38,16 +38,16 @@ int main() {
 	while (true) {
 		MyFdSet copy_set = master_set;
 
-		// See who's interacting (send, close, connect) to us
+		// See who's talking to us (listen -> when someone connect, client -> send or disconnect)
 		int socket_cnt = copy_set.Select(DISP_MODE, activity_file);
 
-		for (int i = 0; i < socket_cnt; ++i) {
+		for (int i = 0; i < socket_cnt; ++i) {    // use socket_cnt instead of master_set.fd_count, see below
 			MySocketWrapper sock = copy_set.Get(i);
 
 			if (sock.data.type == CST::LISTEN_SOCK)    // quan li ket noi 
 				HandleListenSock(sock, DISP_MODE, activity_file, master_set);
 			else
-				HandleClientSock(sock, DISP_MODE, activity_file, master_set);
+				HandleClientSock(sock, DISP_MODE, activity_file);
 		}
 	}
 
@@ -92,7 +92,7 @@ void HandleListenSock(MySocketWrapper& listen_sock, int disp_mode, std::ofstream
 	}
 }
 
-void HandleClientSock(MySocketWrapper& sock, int disp_mode, std::ofstream& activity_file, MyFdSet& master_set) {
+void HandleClientSock(MySocketWrapper& sock, int disp_mode, std::ofstream& activity_file) {
 	switch (sock.data.signin_stat) {
 	case CST::NOT_SIGN_IN: {
 		std::optional<std::string> opt_recv = sock.Receive(disp_mode, activity_file);
@@ -106,11 +106,10 @@ void HandleClientSock(MySocketWrapper& sock, int disp_mode, std::ofstream& activ
 				sock.Send("Enter your username and password (followed by Enter) to sign up", disp_mode, activity_file);
 				sock.data.signin_stat = CST::PENDING_SIGN_UP;
 			}
-			else {    // quit => client send "3" to server and quit already
+			else {    // quit
 				/*
-				TODO: master_set.Remove();
+				TODO: quit client
 				*/
-				sock.Clear();
 			}
 		}
 
@@ -133,7 +132,7 @@ void HandleClientSock(MySocketWrapper& sock, int disp_mode, std::ofstream& activ
 				NotifyAllClients();
 
 				sock.data.signin_stat = CST::SIGNED_IN;
-				sock.data.opt_username = username;
+
 				/*
 				TODO: what next
 				*/
@@ -158,7 +157,16 @@ void HandleClientSock(MySocketWrapper& sock, int disp_mode, std::ofstream& activ
 	}
 
 
-	
+	//// Receive message
+	//int bytes_in = recv(sock, buf, MAX_BUF, 0);
+
+	//if (bytes_in <= 0) {
+	//	// Drop the client
+	//	std::cout << NT_LOG << " A client has disconnected\n";
+	//	closesocket(sock);
+	//	FD_CLR(sock, &master_set);
+	//}
+	//else {
 	//	std::cout << std::string(buf, bytes_in) << "\n";
 
 	//	// Check to see if it's a command. \quit kills the server

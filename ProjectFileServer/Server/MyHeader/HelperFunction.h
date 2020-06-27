@@ -5,12 +5,10 @@
 
 
 void NotifyServer(const std::string& str, int disp_mode, std::ofstream& activity_file) {
-	std::stringstream sstr(str);
-
 	if (disp_mode == CST::ACTIVITY_MODE)
-		std::cout << sstr.str() << "\n";
+		std::cout << str << "\n";
 
-	activity_file << sstr.str() << "\n";
+	activity_file << str << "\n";
 }
 
 void NotifyAllClients() {
