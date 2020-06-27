@@ -1,11 +1,12 @@
 ﻿#include "MyHeader/Resource.h"
 #include "MyHeader/MySocketWrapper.h"
+#include "MyHeader/MySocketData.h"
 #include "MyHeader/MyFdSet.h"
 
 
 void HandleListenSock(MySocketWrapper& listen_sock, int disp_mode, std::ofstream& activity_file, MyFdSet& master_set);
 
-void HandleClientSock(MySocketWrapper& sock, int disp_mode, std::ofstream& activity_file);
+void HandleClientSock(MySocketWrapper& sock, int disp_mode, std::ofstream& activity_file, MyFdSet& master_set);
 
 
 int main() {
@@ -14,14 +15,14 @@ int main() {
 	std::ofstream activity_file("Private/Activity.txt", std::ios::trunc);
 
 	// Init winsock
-	InitialzeWinsockAndCheck(CST::ACTIVITY_MODE, activity_file);
+	InitialzeWinsockAndCheck(CST::ACT_MODE, activity_file);
 
 	// Set display mode to activity mode
 	int DISP_MODE = CST::NO_MODE;
-	SetDispMode(DISP_MODE, CST::ACTIVITY_MODE, activity_file);
+	SetDispMode(DISP_MODE, CST::ACT_MODE, activity_file);
 
 	// Create listen socket
-	MySocketWrapper listen_sock(CST::LISTEN_SOCK, CST::SIGNED_IN, DISP_MODE, activity_file);
+	MySocketWrapper listen_sock(CST::L_SOCK, CST::SIGNED_IN, DISP_MODE, activity_file);
 	listen_sock.Bind(CST::PORT, DISP_MODE, activity_file);
 	listen_sock.Listen(DISP_MODE, activity_file);
 
@@ -29,11 +30,11 @@ int main() {
 	MyFdSet master_set;
 
 	// Add our first socket: the listening socket
-	master_set.Add(listen_sock);
+	master_set.Add({ listen_sock.sock, listen_sock.data });
 
 	// -----------------------------------------------------------
 
-	NotifyServer(CST::NT_ACTIVITY + " Server is up and running\n" + CST::NT_ACTIVITY + " Waiting for connection...", DISP_MODE, activity_file);
+	NotifyServer(CST::NT_ACT + " Server is up and running\n" + CST::NT_ACT + " Waiting for connection...", DISP_MODE, activity_file);
 
 	while (true) {
 		MyFdSet copy_set = master_set;
@@ -41,13 +42,14 @@ int main() {
 		// See who's talking to us (listen -> when someone connect, client -> send or disconnect)
 		int socket_cnt = copy_set.Select(DISP_MODE, activity_file);
 
-		for (int i = 0; i < socket_cnt; ++i) {    // use socket_cnt instead of master_set.fd_count, see below
-			MySocketWrapper sock = copy_set.Get(i);
+		for (int i = 0; i < socket_cnt; ++i) {
+			std::pair<SOCKET, MySocketData> pair_sock = copy_set.Get(i);
+			MySocketWrapper sock(pair_sock.first, pair_sock.second);
 
-			if (sock.data.type == CST::LISTEN_SOCK)    // quan li ket noi 
+			if (sock.data.type == CST::L_SOCK)
 				HandleListenSock(sock, DISP_MODE, activity_file, master_set);
 			else
-				HandleClientSock(sock, DISP_MODE, activity_file);
+				HandleClientSock(sock, DISP_MODE, activity_file, master_set);
 		}
 	}
 
@@ -74,9 +76,7 @@ int main() {
 	//// Cleanup winsock
 	//WSACleanup();
 
-	/*
-	TODO: close activity_file
-	*/
+	activity_file.close();
 }
 
 
@@ -88,14 +88,14 @@ void HandleListenSock(MySocketWrapper& listen_sock, int disp_mode, std::ofstream
 		opt_client_sock.value().Send("Welcome to the File Server\n1 - Sign in\n2 - Sign up\n3 - Quit", disp_mode, activity_file);
 
 		// Add the new connection to the list of connected clients
-		master_set.Add(opt_client_sock.value());
+		master_set.Add({ opt_client_sock.value().sock, opt_client_sock.value().data });
 	}
 }
 
-void HandleClientSock(MySocketWrapper& sock, int disp_mode, std::ofstream& activity_file) {
+void HandleClientSock(MySocketWrapper& sock, int disp_mode, std::ofstream& activity_file, MyFdSet& master_set) {
 	switch (sock.data.signin_stat) {
 	case CST::NOT_SIGN_IN: {
-		std::optional<std::string> opt_recv = sock.Receive(disp_mode, activity_file);
+		std::optional<std::string> opt_recv = sock.ReceiveOrErase(disp_mode, activity_file, master_set);
 
 		if (opt_recv.has_value()) {
 			if (opt_recv.value() == "1") {    // sign in
@@ -116,7 +116,7 @@ void HandleClientSock(MySocketWrapper& sock, int disp_mode, std::ofstream& activ
 		break;
 	}
 	case CST::PENDIND_SIGN_IN: {
-		std::optional<std::string> opt_recv = sock.Receive(disp_mode, activity_file);
+		std::optional<std::string> opt_recv = sock.ReceiveOrErase(disp_mode, activity_file, master_set);
 
 		if (opt_recv.has_value()) {
 			std::stringstream sstr(opt_recv.value());
@@ -132,7 +132,7 @@ void HandleClientSock(MySocketWrapper& sock, int disp_mode, std::ofstream& activ
 				NotifyAllClients();
 
 				sock.data.signin_stat = CST::SIGNED_IN;
-
+				sock.data.opt_username = username;
 				/*
 				TODO: what next
 				*/
@@ -155,19 +155,7 @@ void HandleClientSock(MySocketWrapper& sock, int disp_mode, std::ofstream& activ
 	}
 	default: break;
 	}
-
-
-	//// Receive message
-	//int bytes_in = recv(sock, buf, MAX_BUF, 0);
-
-	//if (bytes_in <= 0) {
-	//	// Drop the client
-	//	std::cout << NT_LOG << " A client has disconnected\n";
-	//	closesocket(sock);
-	//	FD_CLR(sock, &master_set);
-	//}
-	//else {
-	//	std::cout << std::string(buf, bytes_in) << "\n";
+}
 
 	//	// Check to see if it's a command. \quit kills the server
 	//	if (buf[0] == '\\') {
@@ -195,4 +183,3 @@ void HandleClientSock(MySocketWrapper& sock, int disp_mode, std::ofstream& activ
 	//			}
 	//		}
 	//}
-}

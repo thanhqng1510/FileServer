@@ -5,7 +5,7 @@
 
 
 void NotifyServer(const std::string& str, int disp_mode, std::ofstream& activity_file) {
-	if (disp_mode == CST::ACTIVITY_MODE)
+	if (disp_mode == CST::ACT_MODE)
 		std::cout << str << "\n";
 
 	activity_file << str << "\n";
@@ -22,20 +22,20 @@ void InitialzeWinsockAndCheck(int disp_mode, std::ofstream& activity_file) {
 	WORD ver = MAKEWORD(2, 2);
 
 	if (int status = WSAStartup(ver, &wsData); status != 0) {
-		NotifyServer(CST::NT_ERROR + " WSAStartup return ", disp_mode, activity_file);
+		NotifyServer(CST::NT_ERR + " WSAStartup return ", disp_mode, activity_file);
 
 		assert(false);
 	}
 }
 
 void SetDispMode(int& global_mode, int mode, std::ofstream& activity_file) {
-	if (global_mode == CST::ACTIVITY_MODE && mode == CST::LIST_MODE) {
+	if (global_mode == CST::ACT_MODE && mode == CST::LIST_MODE) {
 		system("cls");
 		/*
 		TODO: print list
 		*/
 	}
-	else if (global_mode == CST::LIST_MODE && mode == CST::ACTIVITY_MODE) {
+	else if (global_mode == CST::LIST_MODE && mode == CST::ACT_MODE) {
 		system("cls");
 
 		activity_file.close();
