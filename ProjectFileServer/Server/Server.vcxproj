@@ -144,10 +144,11 @@
     <ClCompile Include="Server.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="Private\Account.txt" />
     <Text Include="Private\Activity.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="MyHeader\Necessity.h" />
+    <ClInclude Include="MyHeader\Resource.h" />
     <ClInclude Include="MyHeader\HelperFunction.h" />
     <ClInclude Include="MyHeader\MyFdSet.h" />
     <ClInclude Include="MyHeader\MySocketData.h" />

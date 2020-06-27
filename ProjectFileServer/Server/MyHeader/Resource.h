@@ -8,6 +8,7 @@
 #include <fstream>
 #include <cassert>
 #include <unordered_map>
+#include <optional>
 
 
 #pragma comment (lib, "ws2_32.lib")
@@ -30,10 +31,10 @@ namespace CST {
 	// Socket type
 	const int LISTEN_SOCK = 3;
 	const int CLIENT_SOCK = 4;
-	const int INVALID_SOCK = 5;
 
 	// Login status
-	const int LOGGED_IN = 6;
-	const int NOT_LOG_IN = 7;
-	const int PENDIND_LOG_IN = 8;
+	const int NOT_SIGN_IN = 5;
+	const int PENDIND_SIGN_IN = 6;
+	const int PENDING_SIGN_UP = 7;
+	const int SIGNED_IN = 8;
 }

@@ -1,9 +1,10 @@
 #pragma once
 
 
-#include "Necessity.h"
+#include "Resource.h"
 #include "MySocketData.h"
 #include "MySocketWrapper.h"
+#include "HelperFunction.h"
 
 
 class MyFdSet {
@@ -26,23 +27,10 @@ public:
 	int Select(int disp_mode, std::ofstream& activity_file) {
 		int socket_cnt = select(0, &m_set, nullptr, nullptr, nullptr);
 
-		std::stringstream sstr;
-		if (socket_cnt == 0) {
-			sstr << CST::NT_ERROR << " select(0, &copy_set, nullptr, nullptr, nullptr) with time limit expired";
-
-			if (disp_mode == CST::ACTIVITY_MODE)
-				std::cout << sstr.str() << "\n";
-
-			activity_file << sstr.str() << "\n";
-		}
-		else if (socket_cnt == SOCKET_ERROR) {
-			sstr << CST::NT_ERROR << " select return " << WSAGetLastError();
-
-			if (disp_mode == CST::ACTIVITY_MODE)
-				std::cout << sstr.str() << "\n";
-
-			activity_file << sstr.str() << "\n";
-		}
+		if (socket_cnt == 0)
+			NotifyServer(CST::NT_ERROR + " select(0, &copy_set, nullptr, nullptr, nullptr) with time limit expired", disp_mode, activity_file);
+		else if (socket_cnt == SOCKET_ERROR) 
+			NotifyServer(CST::NT_ERROR + " select return " + std::to_string(WSAGetLastError()), disp_mode, activity_file);
 
 		return socket_cnt;
 		// don't need to update m_map

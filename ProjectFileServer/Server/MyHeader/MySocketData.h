@@ -1,15 +1,15 @@
 #pragma once
 
 
-#include "Necessity.h"
+#include "Resource.h"
 
 
 class MySocketData {
 public:
-	MySocketData(int type, int login_stat)
-		: type(type), login_stat(login_stat) {}
+	MySocketData(int type, int signin_stat)
+		: type(type), signin_stat(signin_stat) {}
 
 public:
 	int type;
-	int login_stat;    // ignore this if type is LISTEN_SOCK
+	int signin_stat;    // ignore this if type is LISTEN_SOCK
 };
