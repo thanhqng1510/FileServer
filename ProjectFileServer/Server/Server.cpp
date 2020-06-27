@@ -38,7 +38,7 @@ int main() {
 	while (true) {
 		MyFdSet copy_set = master_set;
 
-		// See who's talking to us
+		// See who's talking to us (listen -> when someone connect, client -> send or disconnect)
 		int socket_cnt = copy_set.Select(DISP_MODE, activity_file);
 
 		for (int i = 0; i < socket_cnt; ++i) {    // use socket_cnt instead of master_set.fd_count, see below
