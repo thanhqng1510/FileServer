@@ -24,6 +24,10 @@ public:
 	MySocketWrapper(SOCKET sock, MySocketData data)
 		: sock(sock), data(data) {}
 
+	~MySocketWrapper() {
+		Clear();
+	}
+
 public:
 	void Bind(int port, int disp_mode, std::ofstream& activity_file) {
 		sockaddr_in hint;
@@ -62,24 +66,33 @@ public:
 	}
 
 	int Send(const std::string& str, int disp_mode, std::ofstream& activity_file) {
-		int res = send(sock, str.c_str(), str.size() + 1, 0);
+		int bytes = send(sock, str.c_str(), str.size() + 1, 0);
 
-		if (res == SOCKET_ERROR)
+		if (bytes == SOCKET_ERROR)
 			NotifyServer(CST::NT_ERROR + " send return " + std::to_string(WSAGetLastError()), disp_mode, activity_file);
 
-		return res;
+		return bytes;
 	}
 
 	std::optional<std::string> Receive(int disp_mode, std::ofstream& activity_file) {
 		char BUF[CST::MAX_BUF];
 		ZeroMemory(BUF, CST::MAX_BUF);
 
-		int res = recv(sock, BUF, CST::MAX_BUF, 0);
+		int bytes = recv(sock, BUF, CST::MAX_BUF, 0);
 
-		if (res == SOCKET_ERROR) {
+		if (bytes == SOCKET_ERROR) {    // error occur
 			NotifyServer(CST::NT_ERROR + " recv return " + std::to_string(WSAGetLastError()), disp_mode, activity_file);
 
 			return std::nullopt;
+		}
+		else if (bytes <= 0) {    // client has disconnect
+			// Drop the client
+			/*std::cout << NT_LOG << " A client has disconnected\n";
+			closesocket(sock);
+			FD_CLR(sock, &master_set);*/
+			/*
+			TODO: implement this
+			*/
 		}
 
 		return std::string(BUF);
@@ -87,6 +100,11 @@ public:
 
 	bool operator==(const MySocketWrapper& other) {
 		return sock == other.sock;
+	}
+
+	void Clear() {
+		closesocket(sock);
+		// don't need to clean data
 	}
 
 public:
