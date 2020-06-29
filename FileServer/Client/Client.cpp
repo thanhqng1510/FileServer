@@ -8,7 +8,7 @@ void CommThread();
 void InitialzeWinsockAndCheck();
 
 
-char SHARED_BUF[CST::MAX_BUF]; 
+char SHARED_BUF[CST::MAX_BUF];
 bool READY_READ = false;
 bool READY_SEND = false;
 std::shared_mutex MTX;
@@ -53,8 +53,8 @@ int main() {
 	NotifyClient(CST::NT_ACT + " Connect to server successfully");
 
 	// 2 threads start here
-	std::thread process_thread(ProcessThread, &s_sock);
-	std::thread comm_thread(CommThread);
+	std::thread process_thread(ProcessThread, &s_sock);    // to send and recv data
+	std::thread comm_thread(CommThread);    // to communicate with user
 
 	process_thread.join();
 	comm_thread.join();
@@ -64,7 +64,7 @@ int main() {
 }
 
 
-void ProcessThread(SOCKET* s_sock) {    // to send and recv data
+void ProcessThread(SOCKET* s_sock) {    
 	while (true) {
 		// send phase
 		while (!READY_SEND)
@@ -93,7 +93,7 @@ void ProcessThread(SOCKET* s_sock) {    // to send and recv data
 	}
 }
 
-void CommThread() {    // to communicate with user
+void CommThread() {    
 	int signin_stat = CST::NOT_SIGN_IN;
 
 	while (true) {

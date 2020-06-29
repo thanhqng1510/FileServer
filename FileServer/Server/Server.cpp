@@ -56,10 +56,10 @@ int main() {
 	// Create fd_set and fd_map
 	fd_set MASTER_SET;
 	FD_ZERO(&MASTER_SET);
-	std::unordered_map<SOCKET, MySocketData> MASTER_MAP;    // do not use this SOCKET
+	std::unordered_map<SOCKET, MySocketData> MASTER_MAP;    // do not use this SOCKET !!!
 	std::shared_mutex mtx;    // to protect MASTER_SET and MASTER_MAP
 
-	// Add our first socket: the listening socket
+	// Add listening socket
 	FD_SET(l_sock, &MASTER_SET);
 	MASTER_MAP.insert({ l_sock, l_data });
 
