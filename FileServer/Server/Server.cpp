@@ -272,7 +272,7 @@ void HandleClientSock(SOCKET* p_sock, MySocketData* p_data, fd_set* P_MASTER_SET
 			ss >> username >> password;
 
 			if (!VerifyAccount(username, password)) {    // incorrect -> try again
-				std::string str = "Wrong username or password\n1 - Sign in\n2 - Sign up\n3 - Quit";
+				std::string str = "Wrong username.";
 				int bytes = send(*p_sock, str.c_str(), str.size() + 1, 0);
 				if (bytes == SOCKET_ERROR)
 					NotifyServer(CST::NT_ERR + " send return " + std::to_string(WSAGetLastError()));
@@ -281,6 +281,10 @@ void HandleClientSock(SOCKET* p_sock, MySocketData* p_data, fd_set* P_MASTER_SET
 			}
 			else {    // correct 
 				NotifyServer(CST::NT_INOUT + " " + username + " has signed in");
+				std::string str = "Sign in success.";
+				int bytes = send(*p_sock, str.c_str(), str.size() + 1, 0);
+				if (bytes == SOCKET_ERROR)
+					NotifyServer(CST::NT_ERR + " send return " + std::to_string(WSAGetLastError()));
 
 				(*p_data).signin_stat = CST::SIGNED_IN;
 				(*p_data).opt_username = username;

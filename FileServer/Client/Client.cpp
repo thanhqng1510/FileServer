@@ -8,8 +8,8 @@ void CommThread();
 void InitialzeWinsockAndCheck();
 
 
-char SHARED_BUF[CST::MAX_BUF]; 
-bool READY_READ = false;
+char SHARED_BUF[CST::MAX_BUF]; //hai luong thread xai chung 
+bool READY_READ = false; 
 bool READY_SEND = false;
 std::shared_mutex MTX;
 /*
@@ -93,11 +93,11 @@ void ProcessThread(SOCKET* s_sock) {    // to send and recv data
 	}
 }
 
-void CommThread() {    // to communicate with user
+void CommThread() {    // to communicate with user 
 	int signin_stat = CST::NOT_SIGN_IN;
 
 	while (true) {
-		switch (signin_stat) {
+		switch (signin_stat) { 
 		case CST::NOT_SIGN_IN: {
 			system("cls");
 
@@ -138,9 +138,54 @@ void CommThread() {    // to communicate with user
 			break;
 		}
 		case CST::PENDIND_SIGN_IN: {
+			system("cls");
+
+			std::string username, password;
+			std::cout << "Enter username:";
+			std::cin >> username;
+			std::cout << "Enter password:";
+			std::cin >> password;
+
+			std::stringstream ss;
+			ss << username << "\n" << password;
+
+			
+		
+			// fill buf phase
+			std::unique_lock<std::shared_mutex> lock(MTX);
+
+			ZeroMemory(SHARED_BUF, CST::MAX_BUF);
+			strcpy_s(SHARED_BUF, ss.str().c_str());
+			READY_SEND = true;
+
+			lock.unlock();
+
+			// read buf phase
+			while (!READY_READ)
+				std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+			lock.lock();
+			if (strcmp("Wrong username.",SHARED_BUF) == 0) {
+				std::cout << "Wrong username!";
+				signin_stat = CST::NOT_SIGN_IN;
+				std::cout << "Press Enter...\n";
+				std::cin.get();
+				std::cin.get();
+			}
+			else if (strcmp("Sign in success.",SHARED_BUF) == 0) {
+				std::cout << "Sign in success.";
+				signin_stat = CST::SIGNED_IN;
+				std::cout << "Press Enter...\n";
+				std::cin.get();
+				std::cin.get();
+			}
+
+			READY_READ = false;
+			lock.unlock();
 			break;
 		}
 		case CST::PENDING_SIGN_UP: {
+
 			break;
 		}
 		case CST::SIGNED_IN: {
