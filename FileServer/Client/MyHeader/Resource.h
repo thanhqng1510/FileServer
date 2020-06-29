@@ -5,16 +5,21 @@
 #include <WS2tcpip.h>
 #include <string>
 #include <fstream>
-#include <cassert>
 #include <unordered_map>
 #include <optional>
 #include <sstream>
+#include <functional>
+#include <optional>
+#include <shared_mutex>
+#include <thread>
+#include <chrono>
 
 
 #pragma comment (lib, "ws2_32.lib")
 
 
 namespace CST {
+	const std::string SERVER_IP_ADDR = "127.0.0.1";
 	const int PORT = 54000;
 	const int MAX_BUF = 1024;
 
@@ -23,18 +28,18 @@ namespace CST {
 	const std::string NT_INOUT = "[Signin/Signout]";
 	const std::string NT_ACT = "[Activity]";
 
-	// Display mode
-	const int NO_MODE = 0;
-	const int ACT_MODE = 1;
-	const int LIST_MODE = 2;
-
 	// Socket type
 	const int L_SOCK = 3;
 	const int C_SOCK = 4;
 
-	// Login status
+	// Signin status
 	const int NOT_SIGN_IN = 5;
 	const int PENDIND_SIGN_IN = 6;
 	const int PENDING_SIGN_UP = 7;
 	const int SIGNED_IN = 8;
+
+	// Receive status
+	const int RC_OK = 9;
+	const int RC_ERR = 10;
+	const int RC_TO_DROP = 11;
 }

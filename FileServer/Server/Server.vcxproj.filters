@@ -27,12 +27,6 @@
     <ClInclude Include="MyHeader\HelperFunction.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MyHeader\MyFdSet.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MyHeader\MySocketWrapper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="MyHeader\MySocketData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
