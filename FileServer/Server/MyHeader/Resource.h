@@ -10,6 +10,7 @@
 #include <optional>
 #include <sstream>
 #include <optional>
+#include <functional>
 #include <shared_mutex>
 #include <thread>
 

@@ -19,28 +19,12 @@ int main() {
 	InitialzeWinsockAndCheck();
 
 	// Create socket
-	SOCKET s_sock = socket(AF_INET, SOCK_STREAM, 0);
+	SOCKET s_sock;
 	MySocketData s_data = MySocketData(CST::C_SOCK, CST::NOT_SIGN_IN);
-	if (s_sock == INVALID_SOCKET) {
-		NotifyClient(CST::NT_ERR + " socket(AF_INET, SOCK_STREAM, 0) return " + std::to_string(WSAGetLastError()));
-
-		WSACleanup();
-		return -1;;
-	}
+	CreateSocket(&s_sock);
 
 	// Connect to server
-	sockaddr_in hint;
-	hint.sin_family = AF_INET;
-	hint.sin_port = htons(CST::PORT);
-	inet_pton(AF_INET, CST::SERVER_IP_ADDR.c_str(), &hint.sin_addr);
-
-	if (connect(s_sock, (sockaddr*)&hint, sizeof(hint)) == SOCKET_ERROR) {
-		NotifyClient(CST::NT_ERR + " connect return " + std::to_string(WSAGetLastError()));
-
-		closesocket(s_sock);
-		WSACleanup();
-		return -1;
-	}
+	ConnectToServer(&s_sock, CST::PORT, CST::SERVER_IP_ADDR);
 
 	NotifyClient(CST::NT_ACT + " Connect to server successfully");
 
@@ -48,195 +32,184 @@ int main() {
 
 	while (true) {
 		switch (signin_stat) {
-			case CST::NOT_SIGN_IN: {
-				system("cls");
+		case CST::NOT_SIGN_IN: {
+			system("cls");
 
-				std::cout << "Welcome to the File Server\n";
-				std::cout << "1. Sign in\n";
-				std::cout << "2. Sign up\n";
-				std::cout << "0. Quit\n";    // quit is always be 0
-				std::cout << "> ";
+			std::cout << "Welcome to the File Server\n";
+			std::cout << "1. Sign in\n";
+			std::cout << "2. Sign up\n";
+			std::cout << "0. Quit\n";    // quit is always be 0
+			std::cout << "> ";
 
-				int inp;
-				std::cin >> inp;
+			int inp;
+			std::cin >> inp;
 
-				ZeroMemory(BUF, CST::MAX_BUF);
-				_itoa_s(inp, BUF, 10);
+			ZeroMemory(BUF, CST::MAX_BUF);
+			_itoa_s(inp, BUF, 10);
 
-				int bytes = send(s_sock, BUF, CST::MAX_BUF, 0);
-				if (bytes == SOCKET_ERROR)
-					NotifyClient(CST::NT_ERR + " send return " + std::to_string(WSAGetLastError()));
+			int bytes = send(s_sock, BUF, CST::MAX_BUF, 0);
+			if (bytes == SOCKET_ERROR)
+				NotifyClient(CST::NT_ERR + " send return " + std::to_string(WSAGetLastError()));
 
-				ZeroMemory(BUF, CST::MAX_BUF);
-				bytes = recv(s_sock,BUF, CST::MAX_BUF, 0);
+			ZeroMemory(BUF, CST::MAX_BUF);
+			bytes = recv(s_sock,BUF, CST::MAX_BUF, 0);
 
-				if (bytes <= 0) {    // server has disconnect
-					NotifyClient(CST::NT_ACT + " Server shutdown");
-					exit(-1);
-				}
-
-				if (inp == 1)
-					signin_stat = CST::PENDIND_SIGN_IN;
-				else if (inp == 2)
-					signin_stat = CST::PENDING_SIGN_UP;
-				else  exit(0);  // 3 -> Quit
-
-				break;
+			if (bytes <= 0) {    // server has disconnect
+				NotifyClient(CST::NT_ACT + " Server shutdown");
+				exit(-1);
 			}
 
-			case CST::PENDIND_SIGN_IN: {
-				system("cls");
+			if (inp == 1)
+				signin_stat = CST::PENDIND_SIGN_IN;
+			else if (inp == 2)
+				signin_stat = CST::PENDING_SIGN_UP;
+			else  exit(0);  // 3 -> Quit
 
-				std::string username, password;
-				std::cout << "Enter username:";
-				std::cin >> username;
-				std::cout << "Enter password:";
-				std::cin >> password;
+			break;
+		}
+		case CST::PENDIND_SIGN_IN: {
+			system("cls");
 
-				std::stringstream ss;
-				ss << username << "\n" << password;
+			std::string username, password;
+			std::cout << "Enter username: ";
+			std::cin >> username;
+			std::cout << "Enter password: ";
+			std::cin >> password;
 
-				ZeroMemory(BUF, CST::MAX_BUF);
-				strcpy_s(BUF, ss.str().c_str());
+			std::stringstream ss;
+			ss << username << "\n" << password;
 
-				int bytes = send(s_sock, BUF, CST::MAX_BUF, 0);
-				if (bytes == SOCKET_ERROR)
-					NotifyClient(CST::NT_ERR + " send return " + std::to_string(WSAGetLastError()));
+			ZeroMemory(BUF, CST::MAX_BUF);
+			strcpy_s(BUF, ss.str().c_str());
 
-				ZeroMemory(BUF, CST::MAX_BUF);
-				bytes = recv(s_sock, BUF, CST::MAX_BUF, 0);
+			int bytes = send(s_sock, BUF, CST::MAX_BUF, 0);
+			if (bytes == SOCKET_ERROR)
+				NotifyClient(CST::NT_ERR + " send return " + std::to_string(WSAGetLastError()));
 
-				if (bytes <= 0) {    // server has disconnect
-					NotifyClient(CST::NT_ACT + " Server shutdown");
-					exit(-1);
-				}
+			ZeroMemory(BUF, CST::MAX_BUF);
+			bytes = recv(s_sock, BUF, CST::MAX_BUF, 0);
 
-	
-
-				if (strcmp("Wrong username.", BUF) == 0) {
-					signin_stat = CST::NOT_SIGN_IN;
-
-					std::cout << "Wrong username or password\n";
-					std::cout << "Press Enter...\n";
-					std::cin.get();
-					std::cin.get();
-				}
-				else if (strcmp("Sign in success.", BUF) == 0) {
-					signin_stat = CST::SIGNED_IN;
-
-					std::cout << "Sign in successfully\n";
-					std::cout << "Press Enter...\n";
-					std::cin.get();
-					std::cin.get();
-				}
-
-				break;
-			}
-			case CST::PENDING_SIGN_UP: {
-				system("cls");
-
-				bool check_pass = false;
-				std::string username, password, confirm_pass;
-				while (!check_pass) {
-					std::cout << "Enter username:";
-					std::cin >> username;
-					std::cout << "Enter password:";
-					std::cin >> password;
-					std::cout << "Enter confirm password";
-					std::cin >> confirm_pass;
-					if (!password.compare(confirm_pass)) {
-						std::cout << "Password are not matching.";
-						std::cout << "Press Enter...\n";
-						std::cin.get();
-						std::cin.get();
-					}
-					else
-						check_pass = true;
-				}
-
-				std::stringstream ss;
-				ss << username << "\n" << password;
-
-				ZeroMemory(BUF, CST::MAX_BUF);
-				strcpy_s(BUF, ss.str().c_str());
-
-				int bytes = send(s_sock, BUF, CST::MAX_BUF, 0);
-				if (bytes == SOCKET_ERROR)
-					NotifyClient(CST::NT_ERR + " send return " + std::to_string(WSAGetLastError()));
-
-				ZeroMemory(BUF, CST::MAX_BUF);
-				bytes = recv(s_sock, BUF, CST::MAX_BUF, 0);
-
-				if (bytes <= 0) {    // server has disconnect
-					NotifyClient(CST::NT_ACT + " Server shutdown");
-					exit(-1);
-				}
-
-				if (strcmp("Wrong username.", BUF) == 0) {
-					signin_stat = CST::NOT_SIGN_IN;
-
-					std::cout << "Wrong username or password\n";
-					std::cout << "Press Enter...\n";
-					std::cin.get();
-					std::cin.get();
-				}
-				else if (strcmp("Sign in success.", BUF) == 0) {
-					signin_stat = CST::SIGNED_IN;
-
-					std::cout << "Sign in successfully\n";
-					std::cout << "Press Enter...\n";
-					std::cin.get();
-					std::cin.get();
-				}
-
-				break;
-			}
-			case CST::SIGNED_IN: {
-				break;
-			}
-			default: break;
+			if (bytes <= 0) {    // server has disconnect
+				NotifyClient(CST::NT_ACT + " Server shutdown");
+				exit(-1);
 			}
 
+			if (strcmp("Wrong username or password", BUF) == 0) {
+				signin_stat = CST::NOT_SIGN_IN;
 
-			/*if (inp == 1) {
-				system("cls");
-
-				std::ifstream activity_file("Private/Activity.txt");
-
-				std::stringstream buf;
-				buf << activity_file.rdbuf();
-				std::cout << buf.str();
-
-				activity_file.close();
-
+				std::cout << "Wrong username or password\n";
 				std::cout << "Press Enter...\n";
 				std::cin.get();
 				std::cin.get();
-			}*/
-			//else {    // 2
-			//	//std::shared_lock<std::shared_mutex> lock(*p_mtx);
+			}
+			else if (strcmp("Sign in successfully", BUF) == 0) {
+				signin_stat = CST::SIGNED_IN;
 
-			//	system("cls");
+				std::cout << "Sign in successfully\n";
+				std::cout << "Press Enter...\n";
+				std::cin.get();
+				std::cin.get();
+			}
 
-			//	std::string stat[] = { "NOT_SIGN_IN", "PENDING_SIGN_IN", "PEDING_SIGN_UP", "SIGNED_IN" };
-
-			//	for (int i = 0; i < (*P_MASTER_SET).fd_count; ++i) {
-			//		SOCKET sock = (*P_MASTER_SET).fd_array[i];
-			//		MySocketData data = (*P_MASTER_MAP).at(sock);
-
-			//		if (data.type == CST::C_SOCK)
-			//			std::cout << i + 1 << ". " << (data.opt_username.has_value() ? data.opt_username.value() : "Unknown") << " --- " << stat[data.signin_stat - 5] << "\n";
-			//		else
-			//			std::cout << i + 1 << ". " << "Listen socket --- " << stat[data.signin_stat - 5] << "\n";
-			//	}
-
-			//	std::cout << "Press Enter...\n";
-			//	std::cin.get();
-			//	std::cin.get();
-			//}
+			break;
 		}
-	
+		case CST::PENDING_SIGN_UP: {
+			system("cls");
 
+			bool check_pass = false;
+			std::string username, password, confirm_pass;
+			while (!check_pass) {
+				system("cls");
+
+				std::cout << "Enter username: ";
+				std::cin >> username;
+				std::cout << "Enter password: ";
+				std::cin >> password;
+				std::cout << "Confirm password: ";
+				std::cin >> confirm_pass;
+
+				if (password != confirm_pass) {
+					std::cout << "Password are not matching\n";
+					std::cout << "Press Enter...\n";
+					std::cin.get();
+					std::cin.get();
+				}
+				else check_pass = true;
+			}
+
+			std::stringstream ss;
+			ss << username << "\n" << password;
+
+			ZeroMemory(BUF, CST::MAX_BUF);
+			strcpy_s(BUF, ss.str().c_str());
+
+			int bytes = send(s_sock, BUF, CST::MAX_BUF, 0);
+			if (bytes == SOCKET_ERROR)
+				NotifyClient(CST::NT_ERR + " send return " + std::to_string(WSAGetLastError()));
+
+			ZeroMemory(BUF, CST::MAX_BUF);
+			bytes = recv(s_sock, BUF, CST::MAX_BUF, 0);
+
+			if (bytes <= 0) {    // server has disconnect
+				NotifyClient(CST::NT_ACT + " Server shutdown");
+				exit(-1);
+			}
+
+			if (strcmp("Username has been used", BUF) == 0) {
+				signin_stat = CST::NOT_SIGN_IN;
+
+				std::cout << "Username has been used\n";
+				std::cout << "Press Enter...\n";
+				std::cin.get();
+				std::cin.get();
+			}
+			else if (strcmp("Account created successfully", BUF) == 0) {
+				signin_stat = CST::SIGNED_IN;
+
+				std::cout << "Account created successfully\n";
+				std::cout << "Press Enter...\n";
+				std::cin.get();
+				std::cin.get();
+			}
+
+			break;
+		}
+		case CST::SIGNED_IN: {
+			system("cls");
+			std::cout << "Choose one option:\n";
+			std::cout << "1. Download file\n";
+			std::cout << "2. Upload file\n";
+			std::cout << "0. Sign out\n";    // quit is always be 0
+			std::cout << "> ";
+
+			int inp;
+			std::cin >> inp;
+
+			ZeroMemory(BUF, CST::MAX_BUF);
+			_itoa_s(inp, BUF, 10);
+
+			int bytes = send(s_sock, BUF, CST::MAX_BUF, 0);
+			if (bytes == SOCKET_ERROR)
+				NotifyClient(CST::NT_ERR + " send return " + std::to_string(WSAGetLastError()));
+
+			ZeroMemory(BUF, CST::MAX_BUF);
+			bytes = recv(s_sock, BUF, CST::MAX_BUF, 0);
+
+			if (bytes <= 0) {    // server has disconnect
+				NotifyClient(CST::NT_ACT + " Server shutdown");
+				exit(-1);
+			}
+
+			if (inp == 1);    // TODO: download
+			else if (inp == 2);    // TODO: upload
+			else signin_stat = CST::NOT_SIGN_IN;
+
+			break;
+		}
+		default: break;
+		}
+	}
+	
 	closesocket(s_sock);
 	WSACleanup();
 }
