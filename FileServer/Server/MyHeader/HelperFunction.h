@@ -190,18 +190,16 @@ void RecvOrClose(SOCKET* p_sock, char* BUF, fd_set* P_MASTER_SET, std::unordered
 	int bytes = recv(*p_sock, BUF, CST::MAX_BUF, 0);
 
 	if (bytes <= 0) {    // client has disconnect
-		MySocketData data = (*P_MASTER_MAP).at(*p_sock);
-
-		NotifyServer(CST::NT_ERR + " " + (data.opt_username.has_value() ? data.opt_username.value() : "Unknown") + " quit unexpected");
-
 		FD_CLR(*p_sock, P_MASTER_SET);
 		(*P_MASTER_MAP).erase(*p_sock);
 		closesocket(*p_sock);
 
+		MySocketData data = (*P_MASTER_MAP).at(*p_sock);
+		NotifyServer(CST::NT_ERR + " " + (data.opt_username.has_value() ? data.opt_username.value() : "Unknown") + " quit unexpected");
+
 		return;
 	}
-	else
-		on_success();
+	else on_success();
 }
 
 void HandleListenSock(SOCKET* p_sock, fd_set* P_MASTER_SET, std::unordered_map<SOCKET, MySocketData>* P_MASTER_MAP) {
@@ -214,10 +212,10 @@ void HandleListenSock(SOCKET* p_sock, fd_set* P_MASTER_SET, std::unordered_map<S
 		return;
 	}
 
-	NotifyServer(CST::NT_ACT + " A raw connection has established");
-
 	FD_SET(client_sock, P_MASTER_SET);
 	(*P_MASTER_MAP).insert({ client_sock, client_data });
+
+	NotifyServer(CST::NT_ACT + " A raw connection has established");
 }
 
 void HandleClientSock(SOCKET* p_sock, fd_set* P_MASTER_SET, std::unordered_map<SOCKET, MySocketData>* P_MASTER_MAP) {
@@ -234,16 +232,16 @@ void HandleClientSock(SOCKET* p_sock, fd_set* P_MASTER_SET, std::unordered_map<S
 				data.signin_stat = CST::PENDING_SIGN_UP;
 
 			else {    // quit (client has already quit)
-				NotifyServer(CST::NT_ACT + " " + (data.opt_username.has_value() ? data.opt_username.value() : "Unknown") + " has disconnected");
-
 				FD_CLR(*p_sock, P_MASTER_SET);
 				(*P_MASTER_MAP).erase(*p_sock);
 				closesocket(*p_sock);
 
+				NotifyServer(CST::NT_ACT + " " + (data.opt_username.has_value() ? data.opt_username.value() : "Unknown") + " has disconnected");
+
 				return;
 			}
 
-			SendOrNotify(p_sock, BUF, "\0");    // dummy message
+			SendOrNotify(p_sock, BUF, "");    // dummy message
 			});
 
 		break;
@@ -256,19 +254,17 @@ void HandleClientSock(SOCKET* p_sock, fd_set* P_MASTER_SET, std::unordered_map<S
 			ss >> username >> password;
 
 			if (!VerifyAccount(username, password)) {    // incorrect -> try again
-				std::string str = "Wrong username or password";
-				SendOrNotify(p_sock, BUF, str);
-
 				data.signin_stat = CST::NOT_SIGN_IN;
+
+				SendOrNotify(p_sock, BUF, "Wrong username or password");
 			}
 			else {    // correct 
-				NotifyServer(CST::NT_INOUT + " " + username + " has signed in");
-
-				std::string str = "Sign in successfully";
-				SendOrNotify(p_sock, BUF, str);
-
 				data.signin_stat = CST::SIGNED_IN;
 				data.opt_username = username;
+
+				NotifyServer(CST::NT_INOUT + " " + username + " has signed in");
+
+				SendOrNotify(p_sock, BUF, "Sign in successfully");
 			}
 			});
 
@@ -283,19 +279,17 @@ void HandleClientSock(SOCKET* p_sock, fd_set* P_MASTER_SET, std::unordered_map<S
 			ss >> username >> password;
 
 			if (!RegisterAccount(username, password)) {    // incorrect -> try again
-				std::string str = "Username has been used";
-				SendOrNotify(p_sock, BUF, str);
-
 				data.signin_stat = CST::NOT_SIGN_IN;
+
+				SendOrNotify(p_sock, BUF, "Username has been used");
 			}
 			else {    // correct 
-				NotifyServer(CST::NT_INOUT + " " + username + " has signed in");
-
-				std::string str = "Account created successfully";
-				SendOrNotify(p_sock, BUF, str);
-
 				data.signin_stat = CST::SIGNED_IN;
 				data.opt_username = username;
+
+				NotifyServer(CST::NT_INOUT + " " + username + " has signed in");
+
+				SendOrNotify(p_sock, BUF, "Account created successfully");
 			}
 			});
 
@@ -304,16 +298,15 @@ void HandleClientSock(SOCKET* p_sock, fd_set* P_MASTER_SET, std::unordered_map<S
 	case CST::SIGNED_IN: {
 		char BUF[CST::MAX_BUF];
 		RecvOrClose(p_sock, BUF, P_MASTER_SET, P_MASTER_MAP, [&]() {
-			if (strcmp("1", BUF) == 0)    // download file
-				;
+			if (strcmp("1", BUF) == 0);    // TODO: download file
 
-			else if (strcmp("2", BUF) == 0)    // upload file
-				;
+			else if (strcmp("2", BUF) == 0);    // TODO: upload file
 
 			else { 
+				data.signin_stat = CST::NOT_SIGN_IN;
+
 				NotifyServer(CST::NT_INOUT + " " + data.opt_username.value() + " has signed out");
 
-				data.signin_stat = CST::NOT_SIGN_IN;
 				SendOrNotify(p_sock, BUF, "\0");    // dummy message
 			}
 			});

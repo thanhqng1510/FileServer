@@ -3,5 +3,3 @@
 [Activity] A raw connection has established
 [Activity] Unknown has disconnected
 [Activity] A raw connection has established
-[Error]Unknown quit unexpected
-[Activity] A raw connection has established

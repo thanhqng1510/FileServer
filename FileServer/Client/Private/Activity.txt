@@ -1,1 +1,3 @@
 [Activity] Connect to server successfully
+[Error] send return 10054
+[Error] Server shutdown
