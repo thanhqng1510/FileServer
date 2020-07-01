@@ -1,6 +1,7 @@
 #include "MyHeader/Resource.h"
 #include "MyHeader/MySocketData.h"
 #include "MyHeader/HelperFunction.h"
+#include <filesystem>
 
 
 int main() {
@@ -174,7 +175,46 @@ int main() {
 				exit(-1);
 			}
 
-			if (inp == 1);    // TODO: download
+			if (inp == 1) {
+				std::cout << "Choose file to download:\n";
+				std::cout << BUF;
+				std::cout << "> ";
+
+				int choose;
+				std::cin >> choose;
+
+				ZeroMemory(BUF, CST::MAX_BUF);
+				_itoa_s(choose, BUF, 10);
+
+				int bytes = send(s_sock, BUF, CST::MAX_BUF, 0);
+				if (bytes == SOCKET_ERROR)
+					NotifyClient(CST::NT_ERR + " send return " + std::to_string(WSAGetLastError()));
+
+				// recv file name
+				ZeroMemory(BUF, CST::MAX_BUF);
+				bytes = recv(s_sock, BUF, CST::MAX_BUF, 0);
+
+				if (bytes <= 0) {    // server has disconnect
+					NotifyClient(CST::NT_ACT + " Server shutdown");
+					exit(-1);
+				}
+
+				std::cout << "File name: " << BUF << "\n";
+
+				// recv file size
+				ZeroMemory(BUF, CST::MAX_BUF);
+				bytes = recv(s_sock, BUF, CST::MAX_BUF, 0);
+
+				if (bytes <= 0) {    // server has disconnect
+					NotifyClient(CST::NT_ACT + " Server shutdown");
+					exit(-1);
+				}
+				std::cout << "Size:" << BUF << "\n";
+
+				std::cout << "Press Enter...\n";
+				std::cin.get();
+				std::cin.get();
+			}
 			else if (inp == 2);    // TODO: upload
 			else signin_stat = CST::NOT_SIGN_IN;
 

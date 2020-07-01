@@ -147,6 +147,7 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="Private\Activity.txt" />
+    <Text Include="Public\up_test.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MyHeader\HelperFunction.h" />

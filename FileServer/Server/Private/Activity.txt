@@ -1,5 +1,4 @@
 [Activity] Server is up and running
 [Activity] Waiting for connection...
 [Activity] A raw connection has established
-[Activity] Unknown has disconnected
-[Activity] A raw connection has established
+[Signin/Signout] thanh has signed in

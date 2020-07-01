@@ -3,6 +3,7 @@
 
 #include "Resource.h"
 #include "MySocketData.h"
+#include <filesystem>
 
 
 // 2 threads
@@ -298,9 +299,34 @@ void HandleClientSock(SOCKET* p_sock, fd_set* P_MASTER_SET, std::unordered_map<S
 	case CST::SIGNED_IN: {
 		char BUF[CST::MAX_BUF];
 		RecvOrClose(p_sock, BUF, P_MASTER_SET, P_MASTER_MAP, [&]() {
-			if (strcmp("1", BUF) == 0);    // TODO: download file
+			if (strcmp("1", BUF) == 0) {
+				// send list to server
+				std::stringstream all_file_name;
+				std::unordered_map<int, std::filesystem::path> file_map;
+				int i = 1;
 
-			else if (strcmp("2", BUF) == 0);    // TODO: upload file
+				for (const auto& entry : std::filesystem::directory_iterator("Public/")) {
+					all_file_name << i << ". " << entry.path() << "\n";
+					file_map.insert({ i, entry.path() });
+					++i;
+				}
+
+				SendOrNotify(p_sock, BUF, all_file_name.str());
+				
+				// recv option from client
+				RecvOrClose(p_sock, BUF, P_MASTER_SET, P_MASTER_MAP, [&]() {
+					std::string file_name = file_map.at(atoi(BUF)).string();
+					int size = file_size(file_map.at(atoi(BUF)));
+
+					// send file name and size first
+					SendOrNotify(p_sock, BUF, file_name);
+					SendOrNotify(p_sock, BUF, std::to_string(size));
+					});
+			}
+
+			else if (strcmp("2", BUF) == 0) {
+			
+			}   // TODO: upload file
 
 			else { 
 				data.signin_stat = CST::NOT_SIGN_IN;
