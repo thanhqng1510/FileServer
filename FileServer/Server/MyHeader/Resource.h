@@ -20,7 +20,7 @@
 
 namespace CST {
 	const int PORT = 54000;
-	const int MAX_BUF = 1024;
+	const int MAX_BUF = 512;
 
 	// Name tag
 	const std::string NT_ERR = "[Error]";
