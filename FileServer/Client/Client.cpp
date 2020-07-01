@@ -176,6 +176,7 @@ int main() {
 			}
 
 			if (inp == 1) {
+				system("cls");
 				std::cout << "Choose file to download:\n";
 				std::cout << BUF;
 				std::cout << "> ";
@@ -198,8 +199,7 @@ int main() {
 					NotifyClient(CST::NT_ACT + " Server shutdown");
 					exit(-1);
 				}
-
-				std::cout << "File name: " << BUF << "\n";
+				std::string file_name(BUF);
 
 				// recv file size
 				ZeroMemory(BUF, CST::MAX_BUF);
@@ -209,7 +209,9 @@ int main() {
 					NotifyClient(CST::NT_ACT + " Server shutdown");
 					exit(-1);
 				}
-				std::cout << "Size:" << BUF << "\n";
+				int file_size = atoi(BUF);
+
+
 
 				std::cout << "Press Enter...\n";
 				std::cin.get();

@@ -191,11 +191,12 @@ void RecvOrClose(SOCKET* p_sock, char* BUF, fd_set* P_MASTER_SET, std::unordered
 	int bytes = recv(*p_sock, BUF, CST::MAX_BUF, 0);
 
 	if (bytes <= 0) {    // client has disconnect
+		MySocketData data = (*P_MASTER_MAP).at(*p_sock);
+
 		FD_CLR(*p_sock, P_MASTER_SET);
 		(*P_MASTER_MAP).erase(*p_sock);
 		closesocket(*p_sock);
 
-		MySocketData data = (*P_MASTER_MAP).at(*p_sock);
 		NotifyServer(CST::NT_ERR + " " + (data.opt_username.has_value() ? data.opt_username.value() : "Unknown") + " quit unexpected");
 
 		return;
@@ -300,13 +301,13 @@ void HandleClientSock(SOCKET* p_sock, fd_set* P_MASTER_SET, std::unordered_map<S
 		char BUF[CST::MAX_BUF];
 		RecvOrClose(p_sock, BUF, P_MASTER_SET, P_MASTER_MAP, [&]() {
 			if (strcmp("1", BUF) == 0) {
-				// send list to server
+				// send list to client
 				std::stringstream all_file_name;
 				std::unordered_map<int, std::filesystem::path> file_map;
-				int i = 1;
 
+				int i = 1;
 				for (const auto& entry : std::filesystem::directory_iterator("Public/")) {
-					all_file_name << i << ". " << entry.path() << "\n";
+					all_file_name << i << ". " << entry.path().string() << "\n";
 					file_map.insert({ i, entry.path() });
 					++i;
 				}

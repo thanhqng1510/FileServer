@@ -1,4 +1,12 @@
 [Activity] Server is up and running
 [Activity] Waiting for connection...
 [Activity] A raw connection has established
-[Signin/Signout] thanh has signed in
+[Error] Unknown quit unexpected
+[Activity] A raw connection has established
+[Error] Unknown quit unexpected
+[Activity] A raw connection has established
+[Signin/Signout] phuc has signed in
+[Error] phuc quit unexpected
+[Activity] A raw connection has established
+[Signin/Signout] phuc has signed in
+[Error] phuc quit unexpected
