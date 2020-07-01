@@ -80,6 +80,8 @@ int main() {
 				std::cout << "Press Enter...\n";
 				std::cin.get();
 				std::cin.get();
+
+				NotifyClient(CST::NT_ACT + " Sign in successfully");
 			}
 
 			break;
@@ -143,6 +145,8 @@ int main() {
 				std::cout << "Press Enter...\n";
 				std::cin.get();
 				std::cin.get();
+
+				NotifyClient(CST::NT_ACT + " Sign in successfully");
 			}
 
 			break;
@@ -199,23 +203,42 @@ int main() {
 					NotifyClient(CST::NT_ACT + " Server shutdown");
 					exit(-1);
 				}
-				std::string file_name(BUF);
+				std::string file_name_download = BUF;
 
 				// recv file size
 				ZeroMemory(BUF, CST::MAX_BUF);
 				bytes = recv(s_sock, BUF, CST::MAX_BUF, 0);
-
 				if (bytes <= 0) {    // server has disconnect
 					NotifyClient(CST::NT_ACT + " Server shutdown");
 					exit(-1);
 				}
 				int file_size = atoi(BUF);
 
+				// receiving file
+				std::ofstream outfile(file_name_download, std::ios::binary);
+				int recv_data = 0;
 
+				while (recv_data < file_size){
+					ZeroMemory(BUF, CST::MAX_BUF);
+					bytes = recv(s_sock, BUF, CST::MAX_BUF, 0);
 
+					if (bytes <= 0) {    // server has disconnect
+						NotifyClient(CST::NT_ACT + " Server shutdown");
+						exit(-1);
+					}
+
+					outfile.write(BUF, bytes);
+					recv_data += CST::MAX_BUF;    // recv_data may > size
+				}
+				
+				outfile.close();
+
+				std::cout << "File downloaded successfully\n";
 				std::cout << "Press Enter...\n";
 				std::cin.get();
 				std::cin.get();
+
+				NotifyClient(CST::NT_ACT + " Download file " + file_name_download + " successfully");
 			}
 			else if (inp == 2);    // TODO: upload
 			else signin_stat = CST::NOT_SIGN_IN;

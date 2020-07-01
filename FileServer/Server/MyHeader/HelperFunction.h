@@ -304,7 +304,7 @@ void HandleClientSock(SOCKET* p_sock, fd_set* P_MASTER_SET, std::unordered_map<S
 				// send list to client
 				std::stringstream all_file_name;
 				std::unordered_map<int, std::filesystem::path> file_map;
-
+				//filesystem kieu dl duyet folder
 				int i = 1;
 				for (const auto& entry : std::filesystem::directory_iterator("Public/")) {
 					all_file_name << i << ". " << entry.path().string() << "\n";
@@ -322,6 +322,21 @@ void HandleClientSock(SOCKET* p_sock, fd_set* P_MASTER_SET, std::unordered_map<S
 					// send file name and size first
 					SendOrNotify(p_sock, BUF, file_name);
 					SendOrNotify(p_sock, BUF, std::to_string(size));
+
+					// begin sending file
+					std::ifstream file(file_name, std::ios::binary);
+					int sent = 0;
+
+					while (sent < size) {
+						char tmp[CST::MAX_BUF];
+						file.read(tmp, size - sent >= CST::MAX_BUF ? CST::MAX_BUF : size - sent);
+						std::string send_data(tmp);
+
+						SendOrNotify(p_sock, BUF, send_data);
+						sent += CST::MAX_BUF;    // sent may > size
+					}
+
+					NotifyServer(CST::NT_ACT + " " + data.opt_username.value() + " downloaded file " + file_name);
 					});
 			}
 
