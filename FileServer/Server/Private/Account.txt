@@ -1,2 +1,1 @@
-thanh 123
-phuc 123
+kostu kostu

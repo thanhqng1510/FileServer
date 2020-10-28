@@ -11,6 +11,7 @@
 #include <sstream>
 #include <optional>
 #include <functional>
+#include <filesystem>
 #include <shared_mutex>
 #include <thread>
 
@@ -20,7 +21,7 @@
 
 namespace CST {
 	const int PORT = 54000;
-	const int MAX_BUF = 512;
+	const int MAX_BUF = 1024;
 
 	// Name tag
 	const std::string NT_ERR = "[Error]";

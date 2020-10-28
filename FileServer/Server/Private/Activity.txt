@@ -1,3 +1,7 @@
 [Activity] Server is up and running
 [Activity] Waiting for connection...
 [Activity] A raw connection has established
+[Signin/Signout] kostu has signed in
+[Activity] kostu downloaded file Public/Buoi 1-A.mp4
+[Activity] kostu upload file Public/Buoi 1-A.mp4 successfully
+[Activity] kostu upload file Public/Buoi 1-A.mp4 successfully

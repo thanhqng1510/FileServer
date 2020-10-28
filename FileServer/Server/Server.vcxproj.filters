@@ -22,9 +22,6 @@
   <ItemGroup>
     <Text Include="Private\Activity.txt" />
     <Text Include="Private\Account.txt" />
-    <Text Include="Public\down_test.txt" />
-    <Text Include="Public\File1.txt" />
-    <Text Include="Public\File2.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MyHeader\HelperFunction.h">

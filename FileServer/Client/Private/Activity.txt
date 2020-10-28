@@ -1,1 +1,5 @@
 [Activity] Connect to server successfully
+[Activity] Sign in successfully
+[Activity] Download file Public/Buoi 1-A.mp4 successfully
+[Activity] Upload file Public/Buoi 1-A.mp4 successfully
+[Activity] Upload file Public/Buoi 1-A.mp4 successfully

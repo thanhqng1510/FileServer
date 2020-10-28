@@ -3,7 +3,6 @@
 
 #include "Resource.h"
 #include "MySocketData.h"
-#include <filesystem>
 
 
 // 2 threads
@@ -23,8 +22,9 @@ void BindOrExit(SOCKET* p_sock, int port);
 void ListenOrExit(SOCKET* p_sock);
 
 // Send and receive
-void SendOrNotify(SOCKET* p_sock, char* BUF, const std::string& data);
-void RecvOrClose(SOCKET* p_sock, char* BUF, fd_set* P_MASTER_SET, std::unordered_map<SOCKET, MySocketData>* P_MASTER_MAP, std::function<void()> on_success);
+int SendOrNotify(SOCKET* p_sock, char* BUF, const std::string& data);
+int SendBinaryOrNotify(SOCKET* p_sock, char* BUF);
+void RecvOrClose(SOCKET* p_sock, char* BUF, fd_set* P_MASTER_SET, std::unordered_map<SOCKET, MySocketData>* P_MASTER_MAP, std::function<void(int)> on_success);
 
 // Handle sock
 void HandleListenSock(SOCKET* p_sock, fd_set* P_MASTER_SET, std::unordered_map<SOCKET, MySocketData>* P_MASTER_MAP);
@@ -177,16 +177,26 @@ void ListenOrExit(SOCKET* p_sock) {
 	}
 }
 
-void SendOrNotify(SOCKET* p_sock, char* BUF, const std::string& data) {
+int SendOrNotify(SOCKET* p_sock, char* BUF, const std::string& data) {
 	ZeroMemory(BUF, CST::MAX_BUF);
 	strcpy_s(BUF, CST::MAX_BUF, data.c_str());
 
 	int bytes = send(*p_sock, BUF, CST::MAX_BUF, 0);
 	if (bytes == SOCKET_ERROR)
 		NotifyServer(CST::NT_ERR + " send return " + std::to_string(WSAGetLastError()));
+
+	return bytes;
 }
 
-void RecvOrClose(SOCKET* p_sock, char* BUF, fd_set* P_MASTER_SET, std::unordered_map<SOCKET, MySocketData>* P_MASTER_MAP, std::function<void()> on_success) {
+int SendBinaryOrNotify(SOCKET* p_sock, char* BUF) {
+	int bytes = send(*p_sock, BUF, strlen(BUF), 0);
+	if (bytes == SOCKET_ERROR)
+		NotifyServer(CST::NT_ERR + " send return " + std::to_string(WSAGetLastError()));
+
+	return bytes;
+}
+
+void RecvOrClose(SOCKET* p_sock, char* BUF, fd_set* P_MASTER_SET, std::unordered_map<SOCKET, MySocketData>* P_MASTER_MAP, std::function<void(int)> on_success) {
 	ZeroMemory(BUF, CST::MAX_BUF);
 	int bytes = recv(*p_sock, BUF, CST::MAX_BUF, 0);
 
@@ -201,7 +211,7 @@ void RecvOrClose(SOCKET* p_sock, char* BUF, fd_set* P_MASTER_SET, std::unordered
 
 		return;
 	}
-	else on_success();
+	else on_success(bytes);
 }
 
 void HandleListenSock(SOCKET* p_sock, fd_set* P_MASTER_SET, std::unordered_map<SOCKET, MySocketData>* P_MASTER_MAP) {
@@ -226,7 +236,7 @@ void HandleClientSock(SOCKET* p_sock, fd_set* P_MASTER_SET, std::unordered_map<S
 	switch (data.signin_stat) {
 	case CST::NOT_SIGN_IN: {
 		char BUF[CST::MAX_BUF];
-		RecvOrClose(p_sock, BUF, P_MASTER_SET, P_MASTER_MAP, [&]() {
+		RecvOrClose(p_sock, BUF, P_MASTER_SET, P_MASTER_MAP, [&](int bytes_recv) {
 			if (strcmp("1", BUF) == 0)    // sign in
 				data.signin_stat = CST::PENDIND_SIGN_IN;
 
@@ -250,7 +260,7 @@ void HandleClientSock(SOCKET* p_sock, fd_set* P_MASTER_SET, std::unordered_map<S
 	}
 	case CST::PENDIND_SIGN_IN: {
 		char BUF[CST::MAX_BUF];
-		RecvOrClose(p_sock, BUF, P_MASTER_SET, P_MASTER_MAP, [&]() {
+		RecvOrClose(p_sock, BUF, P_MASTER_SET, P_MASTER_MAP, [&](int bytes_recv) {
 			std::stringstream ss(BUF);
 			std::string username, password;
 			ss >> username >> password;
@@ -274,7 +284,7 @@ void HandleClientSock(SOCKET* p_sock, fd_set* P_MASTER_SET, std::unordered_map<S
 	}
 	case CST::PENDING_SIGN_UP: {
 		char BUF[CST::MAX_BUF];
-		RecvOrClose(p_sock, BUF, P_MASTER_SET, P_MASTER_MAP, [&]() {
+		RecvOrClose(p_sock, BUF, P_MASTER_SET, P_MASTER_MAP, [&](int bytes_recv) {
 			// tach BUF ra 2 bien username va password
 			std::stringstream ss(BUF);
 			std::string username, password;
@@ -299,8 +309,8 @@ void HandleClientSock(SOCKET* p_sock, fd_set* P_MASTER_SET, std::unordered_map<S
 	}
 	case CST::SIGNED_IN: {
 		char BUF[CST::MAX_BUF];
-		RecvOrClose(p_sock, BUF, P_MASTER_SET, P_MASTER_MAP, [&]() {
-			if (strcmp("1", BUF) == 0) {
+		RecvOrClose(p_sock, BUF, P_MASTER_SET, P_MASTER_MAP, [&](int _) {
+			if (strcmp("1", BUF) == 0) {    // download
 				// send list to client
 				std::stringstream all_file_name;
 				std::unordered_map<int, std::filesystem::path> file_map;
@@ -315,7 +325,7 @@ void HandleClientSock(SOCKET* p_sock, fd_set* P_MASTER_SET, std::unordered_map<S
 				SendOrNotify(p_sock, BUF, all_file_name.str());
 				
 				// recv option from client
-				RecvOrClose(p_sock, BUF, P_MASTER_SET, P_MASTER_MAP, [&]() {
+				RecvOrClose(p_sock, BUF, P_MASTER_SET, P_MASTER_MAP, [&](int __) {
 					std::string file_name = file_map.at(atoi(BUF)).string();
 					int size = file_size(file_map.at(atoi(BUF)));
 
@@ -324,30 +334,68 @@ void HandleClientSock(SOCKET* p_sock, fd_set* P_MASTER_SET, std::unordered_map<S
 					SendOrNotify(p_sock, BUF, std::to_string(size));
 
 					// begin sending file
-					std::ifstream file(file_name, std::ios::binary);
-					int sent = 0;
+					/*std::ifstream file(file_name, std::ios::binary);
+					char tmp[CST::MAX_BUF];
 
-					while (sent < size) {
-						char tmp[CST::MAX_BUF];
-						file.read(tmp, size - sent >= CST::MAX_BUF ? CST::MAX_BUF : size - sent);
-						std::string send_data(tmp);
+					while (true) {
+						ZeroMemory(tmp, CST::MAX_BUF);
+						file.read(tmp, CST::MAX_BUF);
 
-						SendOrNotify(p_sock, BUF, send_data);
-						sent += CST::MAX_BUF;    // sent may > size
+						if (!file) {
+							if (file.gcount() > 0)
+								SendBinaryOrNotify(p_sock, tmp);
+							break;
+						}
+
+						SendBinaryOrNotify(p_sock, tmp);
+					}*/
+
+					FILE* file;
+					fopen_s(&file, file_name.c_str(), "rb");
+					char tmp[CST::MAX_BUF];
+					ZeroMemory(tmp, CST::MAX_BUF);
+					while (fread(tmp, sizeof(char), CST::MAX_BUF, file)) {
+						if (send(*p_sock, (char*)tmp, CST::MAX_BUF, 0) == SOCKET_ERROR)
+							NotifyServer(CST::NT_ERR + " send return " + std::to_string(WSAGetLastError()));
+						
+						ZeroMemory(tmp, CST::MAX_BUF);
 					}
-
+					fclose(file);
+				
 					NotifyServer(CST::NT_ACT + " " + data.opt_username.value() + " downloaded file " + file_name);
 					});
 			}
-
 			else if (strcmp("2", BUF) == 0) {
-			
-			}   // TODO: upload file
+				SendOrNotify(p_sock, BUF, "");
 
-			else { 
+				RecvOrClose(p_sock, BUF, P_MASTER_SET, P_MASTER_MAP, [&](int __) {    // recv file name
+					std::string file_name(BUF);
+
+					RecvOrClose(p_sock, BUF, P_MASTER_SET, P_MASTER_MAP, [&](int ___) {    // recv file size
+						int file_size = atoi(BUF);
+
+						FILE* file;
+						fopen_s(&file, file_name.c_str(), "wb");
+						int i = file_size;
+						ZeroMemory(BUF, CST::MAX_BUF);
+						while (i > 0) {
+							int bytes_recv = recv(*p_sock, BUF, CST::MAX_BUF, 0);
+							i -= bytes_recv;
+							fwrite(BUF, sizeof(char), CST::MAX_BUF, file);
+							ZeroMemory(BUF, CST::MAX_BUF);
+						}
+						fclose(file);
+
+						NotifyServer(CST::NT_ACT + " " + data.opt_username.value() + " upload file " + file_name + " successfully");
+						});
+					});
+			}
+			else {    // sign out
 				data.signin_stat = CST::NOT_SIGN_IN;
 
 				NotifyServer(CST::NT_INOUT + " " + data.opt_username.value() + " has signed out");
+
+				data.opt_username = std::nullopt;
 
 				SendOrNotify(p_sock, BUF, "\0");    // dummy message
 			}
@@ -368,7 +416,7 @@ bool VerifyAccount(const std::string& username, const std::string& password) {
 		std::string u, p;
 		sstr >> u >> p;
 
-		if (username == u || password == p) {
+		if (username == u && password == p) {
 			account_file.close();
 			return true;
 		}
